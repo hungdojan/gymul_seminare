@@ -39,7 +39,10 @@ class Subject:
         Args:
             student (sort_lib.student.Student): Instance studenta
         """
-        self.__students.remove(student)
+        try:
+            self.__students.remove(student)
+        except ValueError:
+            pass
 
 
     def student_count(self) -> int:
@@ -53,7 +56,7 @@ class Subject:
 
     def clear_data(self) -> None:
         """Vymaze seznam studentu zapsanych v danem predmetu"""
-        self.__students.clear()
+        list(map(lambda x: x.clear_data(), self.__students))
 
 
     def __repr__(self):

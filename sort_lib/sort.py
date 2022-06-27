@@ -17,6 +17,9 @@ class Sort:
 
     class FileContentFormatException(Exception):
         pass
+
+    class DataNotSortedException(Exception):
+        pass
     
     def __init__(self):
         # Seznam studentu
@@ -25,6 +28,7 @@ class Sort:
         self.__days = []
         # Seznam predmetu
         self.__subjects = set()
+        self._is_sorted = False
     
 
     @property
@@ -39,7 +43,12 @@ class Sort:
 
     @property
     def subjects(self) -> tuple:
-        return tuple(self.__subjects)
+        return tuple(sorted(self.__subjects))
+
+    
+    @property
+    def is_sorted(self):
+        return self._is_sorted
 
 
     @classmethod
@@ -69,6 +78,7 @@ class Sort:
             index (int): Index (pozice) dne k smazani
         """
         if index in range(len(self.days)):
+            self.__days[index].clear_data()
             del self.__days[index]
             self._is_sorted = False
 
@@ -91,8 +101,12 @@ class Sort:
         Args:
             name (str): Jmeno predmetu
         """
+        if name not in self.__subjects:
+            return
         self._is_sorted = False
+        list(map(lambda x: x.remove_subject(name), self.__days))
         self.__subjects.discard(name)
+        # TODO: remove from students
     
 
     def add_student(self, student: Student) -> bool:
@@ -122,7 +136,11 @@ class Sort:
         Args:
             student_id (str): ID studenta
         """
+        found_students = list(map(lambda x: x.id == student_id, self.__students))
+        if len(found_students) < 1:
+            return
         self._is_sorted = False
+        found_students[0].clear_data()
         self.__students = list(filter(lambda x: x.id != student_id, self.__students))
 
 
@@ -279,6 +297,7 @@ class Sort:
                     s.set_comb(0)
                 except:
                     pass
+        self._is_sorted = True
 
 
     def export_data(self, dest_path: str):
@@ -289,9 +308,12 @@ class Sort:
 
         Raises:
             Sort.FilePathException: Cesta ke slozce neexistuje
+            Sort.DataNotSortedException: Data nejsou pripravena pro export
         """
         if dest_path is None or not os.path.isdir(dest_path):
             raise Sort.FilePathException('Invalid output directory path')
+        if not self._is_sorted:
+            raise Sort.DataNotSortedException('Cannot export unsorted data')
         
         # vypis rozdeleni studentu do predmetu podle jednotlivych dnu
         with open(os.path.join(dest_path, OUT_DAYS), 'w', encoding='utf-8') as f:

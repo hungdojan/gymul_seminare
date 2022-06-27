@@ -135,7 +135,7 @@ class Student:
     def clean_data(self):
         """Vynuluje vygenerovana data studenta"""
         self._is_locked = False
-        self.__chosen_comb = None
+        self.__update_combination(None)
         self.__possible_comb = []
     
     def __repr__(self) -> str:

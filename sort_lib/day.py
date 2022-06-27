@@ -64,11 +64,15 @@ class Day:
         Args:
             subject_name (str): Jmeno predmetu
         """
+        delete_subj = list(filter(lambda x: x.name == subject_name, self.__subjects))
+        if len(delete_subj) > 0:
+            delete_subj[0].clear_data()
         self.__subjects = list(filter(lambda x: x.name != subject_name, self.__subjects))
     
 
-    def clear_day(self):
+    def clear_data(self):
         """Vymaze vsechny predmety v danem dni"""
+        list(map(lambda x: x.clear_data(), self.__subjects))
         self.__subjects.clear()
     
 
