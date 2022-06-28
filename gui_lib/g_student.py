@@ -19,7 +19,7 @@ class GStudent(QWidget):
 
         self._setupUI()
 
-        base_layout.addWidget(self)
+        base_layout.insertWidget(base_layout.count() - 1, self)
         self.setAutoFillBackground(True)
     
 
@@ -82,7 +82,9 @@ class GStudent(QWidget):
         if len(self.model.possible_comb) < 1:
             pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_FAILED)
         elif len(self.model.possible_comb) > 0 and self.model.chosen_comb is None:
-            pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_UNDEFINED)
+            pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE)
+        elif len(self.model.possible_comb) > 1 and self.model.chosen_comb is not None:
+            pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE_CHOSEN)
         else:
             pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_PASSED)
         self.setPalette(pal)
@@ -103,15 +105,14 @@ class GStudent(QWidget):
     def on_locked_triggered(self):
         self.model.is_locked = not self.model.is_locked
         if self.model.is_locked:
-            self.id_lbl.setDisabled(True)
-            self.first_name_lbl.setDisabled(True)
-            self.last_name_lbl.setDisabled(True)
-            self.class_id_lbl.setDisabled(True)
+            # self.id_lbl.setDisabled(True)
+            # self.first_name_lbl.setDisabled(True)
+            # self.last_name_lbl.setDisabled(True)
+            # self.class_id_lbl.setDisabled(True)
             list(map(lambda x: x.setDisabled(True), self.subjects_cb))
-        # self.setDisabled(not self.model.is_locked)
         else:
-            self.id_lbl.setDisabled(False)
-            self.first_name_lbl.setDisabled(False)
-            self.last_name_lbl.setDisabled(False)
-            self.class_id_lbl.setDisabled(False)
+            # self.id_lbl.setDisabled(False)
+            # self.first_name_lbl.setDisabled(False)
+            # self.last_name_lbl.setDisabled(False)
+            # self.class_id_lbl.setDisabled(False)
             list(map(lambda x: x.setDisabled(False), self.subjects_cb))

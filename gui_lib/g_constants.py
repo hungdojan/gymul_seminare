@@ -2,9 +2,11 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtCore import Qt
 
 class GWidgetColors:
-    STUDENT_PASSED = QColor('#9bd0b7')
-    STUDENT_FAILED = QColor('#f6aa90')
-    STUDENT_UNDEFINED = QColor('#f8df81')
+    # source: https://www.pinterest.com/pin/143130094399827603/
+    STUDENT_PASSED = QColor('#c2ed98')
+    STUDENT_FAILED = QColor('#f59b7c')
+    STUDENT_MULTIPLE = QColor('#fed776')
+    STUDENT_MULTIPLE_CHOSEN = QColor('#8ed2cd')
 
 class LabelWidth:
     # TODO:

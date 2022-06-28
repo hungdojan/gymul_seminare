@@ -168,10 +168,10 @@ class Sort:
             Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem
 
         Returns:
-            list: Seznam ID, ktere jiz byly jednou nacteny
+            list: Seznam ID nove pridanych zaku
         """
-        # seznam koliznich ID studentu
-        id_collision = []
+        # seznam ID novych studentu
+        new_students_id = []
 
         # kontrola vybraneho souboru (zda existuje a ma spravnou koncovku)
         if path is None or not isinstance(path, str) or not os.path.isfile(path):
@@ -195,15 +195,15 @@ class Sort:
                 # kontrola, zda neexistuje student se stejnym id
                 # pokud student existuje, je preskocen
                 if len(list(filter(lambda x: x.id == int(data[0]), self.__students))) > 0:
-                    id_collision.append(data[0])
                     continue
                 
                 # vlozi noveho studenta do seznamu studentu
                 self.__students.append(Student(
                     data[0], data[1], data[2], data[3], tuple(data[4-len(data):])
                 ))
+                new_students_id.append(data[0])
         
-        return id_collision 
+        return new_students_id 
 
 
     def load_file_subjects(self, path: str) -> list:
@@ -218,10 +218,10 @@ class Sort:
             Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem
 
         Returns:
-            list: Seznam jmen predmetu, ktere jiz byly jednou nacteny
+            list: Seznam jmeno nove pridanym predmetu
         """
         # seznam koliznich jmen predmetu
-        name_collision = []
+        new_subjs = []
 
         # kontrola vybraneho souboru (zda existuje a ma spravnou koncovku)
         if path is None or not isinstance(path, str) or not os.path.isfile(path):
@@ -244,12 +244,11 @@ class Sort:
 
                 # kontrola, zda neexistuje  se stejnym id
                 # pokud student existuje, je preskocen
-                if len(list(filter(lambda x: x.id == data[0], self.__students))) > 0:
-                    name_collision.append(data[0])
-                else:
+                if len(list(filter(lambda x: x.id == data[0], self.__students))) < 1:
                     self.__subjects.add(data[0])
+                    new_subjs.append(data[0])
 
-        return name_collision 
+        return new_subjs 
 
     
     def sort_data(self) -> None:

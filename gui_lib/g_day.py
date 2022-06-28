@@ -5,16 +5,20 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import pyqtSignal, pyqtSlot
 # from PyQt6.QtGui import 
 
-class GDay(QWidget):
+class GDay(QFrame):
 
     def __init__(self, model: Day, base_layout: QBoxLayout, base_gparent: 'gui_lib.g_main_window.GMainWindow'):
         super().__init__()
         self._model = model
-        self.setLayout(QVBoxLayout())
-        self.layout().addWidget(QLabel('Day'))
+        self.setFrameShape(QFrame.Shape.Box)
+        self.setLineWidth(3)
+        self.setLayout(QGridLayout())
+        for i in range(len(base_gparent.model.subjects)):
+            btn = QPushButton(base_gparent.model.subjects[i])
+            btn.setCheckable(True)
+            self.layout().addWidget(btn, i // 5, i % 5)
         self.base_gparent = base_gparent
-        base_layout.addWidget(self)
-        # TODO:
+        base_layout.insertWidget(base_layout.count() - 1, self)
     
 
     @property

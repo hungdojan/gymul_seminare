@@ -8,7 +8,7 @@ def main():
 
     # znema velikosti pisma aplikace
     font = app.font()
-    font.setPointSize(13)
+    font.setPointSize(12)
     app.setFont(font)
 
     g_main_window = GMainWindow(Sort())
