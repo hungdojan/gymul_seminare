@@ -1,4 +1,3 @@
-from ast import Sub
 from sort_lib.subject import Subject
 
 class GSubject():

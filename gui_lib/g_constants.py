@@ -1,6 +1,13 @@
-from PyQt6.QtGui import QColor
-from PyQt6.QtCore import Qt
+from PySide6.QtGui import QColor
+from PySide6.QtCore import Qt
 
+COLORS_DICT = {
+    'green'   : '#c2ed98',
+    'red'     : '#f59b7c',
+    'yellow'  : '#fed776',
+    'blue-ish': '#8ed2cd'
+    
+}
 class GWidgetColors:
     # source: https://www.pinterest.com/pin/143130094399827603/
     STUDENT_PASSED = QColor('#c2ed98')

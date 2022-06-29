@@ -1,7 +1,6 @@
-from PyQt6.QtWidgets import *
-from PyQt6.QtGui import QKeySequence, QPalette, QColor
-from PyQt6.QtCore import pyqtSlot, pyqtSignal, Qt
-import py
+from PySide6.QtWidgets import *
+from PySide6.QtGui import QKeySequence, QPalette
+from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
 import sort_lib.sort
 from gui_lib.g_student import GStudent
 from gui_lib.g_day import GDay
@@ -10,7 +9,7 @@ from sort_lib.student import Student
 
 class GMainWindow(QMainWindow):
 
-    content_refreshed = pyqtSignal()
+    content_refreshed = Signal()
 
     def __init__(self, model: 'sort_lib.sort.Sort', parent: QWidget=None):
         super().__init__(parent)
@@ -34,7 +33,8 @@ class GMainWindow(QMainWindow):
         self.selected_days = set()
 
         self.lof_gdays = []
-    
+        self.content_refreshed.connect(self.filter_students) 
+        self.load_stylesheet()
 
     @property
     def model(self):
@@ -136,10 +136,10 @@ class GMainWindow(QMainWindow):
 
         # filtrovaci tlacitka
         self.buttons = {
-            'red': QPushButton('ON'),
-            'yellow': QPushButton('ON'),
-            'green': QPushButton('ON'),
-            'blue-ish': QPushButton('ON')
+            'red': QPushButton('ON', objectName='FailedButton'),
+            'yellow': QPushButton('ON', objectName='MultipleButton'),
+            'green': QPushButton('ON', objectName='SuccessButton'),
+            'blue-ish': QPushButton('ON', objectName='ChosenButton')
         }
         w = QWidget()
         w.setLayout(QHBoxLayout())
@@ -157,7 +157,9 @@ class GMainWindow(QMainWindow):
                 pal.setColor(QPalette.ColorRole.Button, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE_CHOSEN)
             else:
                 pal.setColor(QPalette.ColorRole.Button, gui_lib.g_constants.GWidgetColors.STUDENT_PASSED)
+            pal.setColor(QPalette.ColorRole.Window, Qt.GlobalColor.blue)
             self.buttons[btn].setPalette(pal)
+            # self.buttons[btn].setStyleSheet(f'background-color: {gui_lib.g_constants.COLORS_DICT[btn]}')
             w.layout().addWidget(self.buttons[btn])
         self.main_grid_layout.addWidget(w, 0, 1)
 
@@ -227,6 +229,14 @@ class GMainWindow(QMainWindow):
         btn.clicked.connect(self.slt_sort)
         self.main_grid_layout.addWidget(btn, 3, 3)
 
+    
+    def load_stylesheet(self):
+        # TODO: load from resources file
+        stylesheet = QFile(":/stylesheet.qss")
+        stylesheet.open(QIODevice.OpenModeFlag.ReadOnly)
+        style = str(stylesheet.readAll(), 'utf-8')
+        self.setStyleSheet(style)
+
 
     def select_student(self, gstudent: 'GStudent', status: bool):
         if status:
@@ -243,7 +253,7 @@ class GMainWindow(QMainWindow):
 
     
     # slots  
-    @pyqtSlot()
+    @Slot()
     def slt_delete_student(self):
         # TODO:
         print('delete student')
@@ -251,19 +261,19 @@ class GMainWindow(QMainWindow):
             gs.remove_widget()
             self.model.delete_student(gs.model)
 
-    @pyqtSlot()
+    @Slot()
     def slt_open_file(self):
         # TODO:
         print("open file")
 
 
-    @pyqtSlot()
+    @Slot()
     def slt_save(self):
         # TODO:
         print('save')
 
 
-    @pyqtSlot()
+    @Slot()
     def slt_import_subjects(self):
         # TODO:
         dialog = QFileDialog(self)
@@ -283,7 +293,7 @@ class GMainWindow(QMainWindow):
         print('import subjects')
 
 
-    @pyqtSlot()
+    @Slot()
     def slt_export(self):
         # TODO:
         if not self.model.is_sorted:
@@ -308,7 +318,7 @@ class GMainWindow(QMainWindow):
         print('export data')
     
 
-    @pyqtSlot()
+    @Slot()
     def slt_import_students(self):
         # TODO:
         dialog = QFileDialog(self)
@@ -328,19 +338,19 @@ class GMainWindow(QMainWindow):
         print('import students')
 
 
-    @pyqtSlot()
+    @Slot()
     def slt_close_app(self):
         # TODO:
         print('close app')
     
 
-    @pyqtSlot()
+    @Slot()
     def slt_add_student(self):
         # TODO:
         print('add student')
 
     
-    @pyqtSlot()
+    @Slot()
     def slt_add_day(self):
         # TODO:
         new_day = self.model.add_day()
@@ -348,7 +358,7 @@ class GMainWindow(QMainWindow):
         print('add day')
     
 
-    @pyqtSlot()
+    @Slot()
     def slt_remove_days(self):
         # TODO:
         # for gd in self.selected_gdays:
@@ -358,18 +368,18 @@ class GMainWindow(QMainWindow):
         print('remove days')
 
     
-    @pyqtSlot()
+    @Slot()
     def slt_help(self):
         # TODO:
         print('about')
 
-    @pyqtSlot()
+    @Slot()
     def slt_about(self):
         # TODO:
         print('about')
     
 
-    @pyqtSlot()
+    @Slot()
     def slt_sort(self):
         self.model.sort_data()
         temp = list(filter(lambda x: len(x.possible_comb) > 1, self.model.students))
@@ -378,7 +388,7 @@ class GMainWindow(QMainWindow):
         print('sort')
     
 
-    @pyqtSlot()
+    @Slot()
     def filter_students(self):
         # red
         red_students = list(filter(lambda x: len(x.model.possible_comb) < 1, self.lof_gstudents))

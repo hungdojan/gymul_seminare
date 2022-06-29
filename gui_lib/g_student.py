@@ -1,14 +1,14 @@
 from sort_lib.student import Student
-from PyQt6.QtWidgets import *
-from PyQt6.QtCore import pyqtSlot, Qt, pyqtSignal
-from PyQt6.QtGui import QMouseEvent, QPalette
+from PySide6.QtWidgets import *
+from PySide6.QtCore import Slot, Qt, Signal
+from PySide6.QtGui import QMouseEvent, QPalette
 import gui_lib.g_main_window
 from gui_lib.g_combobox import GComboBox
 import gui_lib.g_constants
 
 class GStudent(QWidget):
 
-    locked_triggered = pyqtSignal()
+    locked_triggered = Signal()
 
     def __init__(self, model: Student, base_layout: QBoxLayout, base_gparent: 'gui_lib.g_main_window.GMainWindow'):
         super().__init__()
@@ -73,7 +73,7 @@ class GStudent(QWidget):
     def remove_widget(self):
         self.setParent(None)
 
-    @pyqtSlot()
+    @Slot()
     def update_content(self):
         # TODO:
 
@@ -90,7 +90,7 @@ class GStudent(QWidget):
         self.setPalette(pal)
 
 
-    @pyqtSlot()
+    @Slot()
     def update_lof_items(self):
         # TODO:
         for i in len(self.subjects_cb):
@@ -101,7 +101,7 @@ class GStudent(QWidget):
         pass
 
 
-    @pyqtSlot()
+    @Slot()
     def on_locked_triggered(self):
         self.model.is_locked = not self.model.is_locked
         if self.model.is_locked:

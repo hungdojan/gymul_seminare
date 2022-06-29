@@ -1,5 +1,5 @@
-from PyQt6.QtWidgets import QComboBox, QWidget
-import PyQt6.QtGui as QtGui
+from PySide6.QtWidgets import QComboBox, QWidget
+import PySide6.QtGui as QtGui
 
 class GComboBox(QComboBox):
 

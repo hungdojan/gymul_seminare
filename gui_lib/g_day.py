@@ -1,8 +1,7 @@
-from email.mime import base
 from sort_lib.day import Day
 import gui_lib.g_main_window
-from PyQt6.QtWidgets import *
-from PyQt6.QtCore import pyqtSignal, pyqtSlot
+from PySide6.QtWidgets import *
+from PySide6.QtCore import Signal, Slot
 # from PyQt6.QtGui import 
 
 class GDay(QFrame):
