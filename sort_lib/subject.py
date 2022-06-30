@@ -56,9 +56,7 @@ class Subject:
 
     def clear_data(self) -> None:
         """Vymaze seznam studentu zapsanych v danem predmetu"""
-        for i in reversed(self.__students):
-            i.clear_data()
-        # list(map(lambda x: x.clear_data(), self.__students))
+        list(map(lambda x: x.clear_data(), reversed(self.__students)))
 
 
     def __repr__(self):

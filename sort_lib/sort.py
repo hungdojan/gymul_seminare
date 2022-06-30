@@ -136,7 +136,7 @@ class Sort:
         Args:
             student_id (str): ID studenta
         """
-        found_students = list(map(lambda x: x.id == student_id, self.__students))
+        found_students = list(filter(lambda x: x.id == student_id, self.__students))
         if len(found_students) < 1:
             return
         self._is_sorted = False

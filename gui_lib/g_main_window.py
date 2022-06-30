@@ -1,15 +1,17 @@
 from PySide6.QtWidgets import *
-from PySide6.QtGui import QKeySequence, QPalette
+from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent
 from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
 import sort_lib.sort
 from gui_lib.g_student import GStudent
 from gui_lib.g_day import GDay
-import gui_lib.g_constants
-from sort_lib.student import Student
+from gui_lib.g_constants import StudentStatus
+import rc
 
 class GMainWindow(QMainWindow):
 
     content_refreshed = Signal()
+    subject_list_update = Signal(list)
+
 
     def __init__(self, model: 'sort_lib.sort.Sort', parent: QWidget=None):
         super().__init__(parent)
@@ -18,19 +20,19 @@ class GMainWindow(QMainWindow):
         # FIXME: TESTING PURPOSES
         self.model.load_file_subjects('./data/input_predmety.csv')
         self.model.load_file_students('./data/input_zaci-2R-anonym.csv')
-        den1 = self.model.add_day()
-        list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
-        den2 = self.model.add_day()
-        list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
-        den3 = self.model.add_day()
-        list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
-        den4 = self.model.add_day()
-        list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
+        # den1 = self.model.add_day()
+        # list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
+        # den2 = self.model.add_day()
+        # list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
+        # den3 = self.model.add_day()
+        # list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
+        # den4 = self.model.add_day()
+        # list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
         # END TESTING
 
         self.setupUI()
-        self.selected_students = set()
-        self.selected_days = set()
+        self.selected_gstudents = set()
+        self.selected_gdays = set()
 
         self.lof_gdays = []
         self.content_refreshed.connect(self.filter_students) 
@@ -96,7 +98,7 @@ class GMainWindow(QMainWindow):
         self.auto_refresh_action = file_menu.addAction('Auto-refresh')
         self.auto_refresh_action.setCheckable(True)
         file_menu.addSeparator()
-        add_action('Zavřít', self.close, file_menu)
+        add_action('Zavřít', self.close, file_menu, 'Alt+F4')
 
         # student menu
         student_menu = self.menu_bar.addMenu('Student')
@@ -112,7 +114,7 @@ class GMainWindow(QMainWindow):
     def _setup_student_panel(self):
         # skrolovaci plocha
         lof_students_scrar = QScrollArea(self)
-        lof_students_scrar.setMinimumWidth(550)
+        lof_students_scrar.setMinimumWidth(500)
         lof_students_scrar.setLineWidth(2)
         lof_students_scrar.setFrameShape(QFrame.Shape.Box)
         lof_students_scrar.setFrameShadow(QFrame.Shadow.Plain)
@@ -148,18 +150,6 @@ class GMainWindow(QMainWindow):
             self.buttons[btn].setChecked(True)
             self.buttons[btn].setAutoFillBackground(True)
             self.buttons[btn].toggled.connect(self.filter_students)
-            pal = QPalette()
-            if btn == 'red':
-                pal.setColor(QPalette.ColorRole.Button, gui_lib.g_constants.GWidgetColors.STUDENT_FAILED)
-            elif btn == 'yellow':
-                pal.setColor(QPalette.ColorRole.Button, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE)
-            elif btn == 'blue-ish':
-                pal.setColor(QPalette.ColorRole.Button, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE_CHOSEN)
-            else:
-                pal.setColor(QPalette.ColorRole.Button, gui_lib.g_constants.GWidgetColors.STUDENT_PASSED)
-            pal.setColor(QPalette.ColorRole.Window, Qt.GlobalColor.blue)
-            self.buttons[btn].setPalette(pal)
-            # self.buttons[btn].setStyleSheet(f'background-color: {gui_lib.g_constants.COLORS_DICT[btn]}')
             w.layout().addWidget(self.buttons[btn])
         self.main_grid_layout.addWidget(w, 0, 1)
 
@@ -231,7 +221,7 @@ class GMainWindow(QMainWindow):
 
     
     def load_stylesheet(self):
-        # TODO: load from resources file
+        """Nacte data z QCSS"""
         stylesheet = QFile(":/stylesheet.qss")
         stylesheet.open(QIODevice.OpenModeFlag.ReadOnly)
         style = str(stylesheet.readAll(), 'utf-8')
@@ -239,17 +229,42 @@ class GMainWindow(QMainWindow):
 
 
     def select_student(self, gstudent: 'GStudent', status: bool):
+        """Spravuje oznacene GStudenty
+
+        Args:
+            gstudent (GStudent): Instance GStudent, ktereho se operace tyka
+            status (bool): Pravdivostni hodnota, zda byl objekt oznacen ci ne
+        """
         if status:
-            self.selected_students.add(gstudent)
+            self.selected_gstudents.add(gstudent)
         else:
-            self.selected_students.discard(gstudent)
+            self.selected_gstudents.discard(gstudent)
     
 
     def select_day(self, gday: 'GDay', status: bool):
+        """Spravuje oznacene GDny
+
+        Args:
+            gstudent (GStudent): Instance GDay, ktereho se operace tyka
+            status (bool): Pravdivostni hodnota, zda byl objekt oznacen ci ne
+        """
         if status:
-            self.selected_days.add(gday)
+            self.selected_gdays.add(gday)
         else:
-            self.selected_days.discard(gday)
+            self.selected_gdays.discard(gday)
+
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """Predefinuje funkci paintEvent
+
+        Args:
+            event (QPaintEvent): Promenna udalosti QPaintEvent
+        """
+        opt = QStyleOption()
+        opt.initFrom(self)
+        p = QPainter(self)
+        self.style().drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, p, self)
+        super().paintEvent(event)
 
     
     # slots  
@@ -259,7 +274,7 @@ class GMainWindow(QMainWindow):
         print('delete student')
         for gs in self.selected_gstudents:
             gs.remove_widget()
-            self.model.delete_student(gs.model)
+            self.model.remove_student(gs.model)
 
     @Slot()
     def slt_open_file(self):
@@ -278,7 +293,7 @@ class GMainWindow(QMainWindow):
         # TODO:
         dialog = QFileDialog(self)
         dialog.setWindowTitle('Importovat předměty')
-        dialog.setNameFilter('(*.csv)')
+        dialog.setNameFilter('CSV soubor (*.csv)')
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
 
         if not dialog.exec():
@@ -286,6 +301,7 @@ class GMainWindow(QMainWindow):
         filename = dialog.selectedFiles()[0]
         try:
             new_subj = self.model.load_file_subjects(filename)
+            self.subject_list_update.emit(new_subj)
             # TODO: ADD SUBJECT
         except sort_lib.sort.Sort.FileContentFormatException:
             # TODO: WRONG FORMAT DIALOG
@@ -320,17 +336,20 @@ class GMainWindow(QMainWindow):
 
     @Slot()
     def slt_import_students(self):
-        # TODO:
         dialog = QFileDialog(self)
         dialog.setWindowTitle('Importovat studenty')
-        dialog.setNameFilter('(*.csv)')
+        dialog.setNameFilter('CSV soubor (*.csv)')
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+
+        # TODO: SUBJECT CHECK
 
         if not dialog.exec():
             return
         filename = dialog.selectedFiles()[0]
         try:
-            new_students = self.model.load_file_students(filename)
+            new_ids = self.model.load_file_students(filename)
+            new_students = list(filter(lambda x: x.id in new_ids, self.model.students))
+            list(map(lambda x: self.lof_gstudents.append(GStudent(x, self.student_vbox, self)), new_students))
             # TODO: ADD STUDENT
         except sort_lib.sort.Sort.FileContentFormatException:
             # TODO: WRONG FORMAT DIALOG
@@ -340,8 +359,7 @@ class GMainWindow(QMainWindow):
 
     @Slot()
     def slt_close_app(self):
-        # TODO:
-        print('close app')
+        self.close()
     
 
     @Slot()
@@ -370,11 +388,17 @@ class GMainWindow(QMainWindow):
     
     @Slot()
     def slt_help(self):
+        help_dialog = QDialog()
+        help_dialog.show()
+        help_dialog.exec()
         # TODO:
-        print('about')
+        print('help')
 
     @Slot()
     def slt_about(self):
+        about_dialog = QDialog()
+        about_dialog.show()
+        about_dialog.exec()
         # TODO:
         print('about')
     
@@ -382,8 +406,9 @@ class GMainWindow(QMainWindow):
     @Slot()
     def slt_sort(self):
         self.model.sort_data()
-        temp = list(filter(lambda x: len(x.possible_comb) > 1, self.model.students))
-        list(map(lambda x: x.set_comb(0), temp))
+        # temp = list(filter(lambda x: len(x.possible_comb) > 1, self.model.students))
+        # TODO: try-except
+        # list(map(lambda x: x.set_comb(0), temp))
         self.content_refreshed.emit()
         print('sort')
     
@@ -391,25 +416,19 @@ class GMainWindow(QMainWindow):
     @Slot()
     def filter_students(self):
         # red
-        red_students = list(filter(lambda x: len(x.model.possible_comb) < 1, self.lof_gstudents))
+        red_students = list(filter(lambda x: x.get_status() == StudentStatus.NO_COMB, self.lof_gstudents))
         list(map(lambda x: x.setVisible(self.buttons['red'].isChecked()), red_students))
 
         # yellow
-        yellow_students = list(filter(
-            lambda x: len(x.model.possible_comb) > 1 and x.model.chosen_comb is None,
-            self.lof_gstudents))
+        yellow_students = list(filter(lambda x: x.get_status() == StudentStatus.MUL_COMB, self.lof_gstudents))
         list(map(lambda x: x.setVisible(self.buttons['yellow'].isChecked()), yellow_students))
 
         # blue-ish
-        blueish_students = list(filter(
-            lambda x: len(x.model.possible_comb) > 1 and x.model.chosen_comb is not None,
-            self.lof_gstudents))
+        blueish_students = list(filter(lambda x: x.get_status() == StudentStatus.MUL_SET, self.lof_gstudents))
         list(map(lambda x: x.setVisible(self.buttons['blue-ish'].isChecked()), blueish_students))
 
         # green
-        green_students = list(filter(
-            lambda x: len(x.model.possible_comb) == 1 and x.model.chosen_comb is not None,
-            self.lof_gstudents))
+        green_students = list(filter(lambda x: x.get_status() == StudentStatus.ONLY_ONE, self.lof_gstudents))
         list(map(lambda x: x.setVisible(self.buttons['green'].isChecked()), green_students))
 
         for btn in self.buttons:
