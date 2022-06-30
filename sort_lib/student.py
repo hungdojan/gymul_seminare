@@ -132,7 +132,7 @@ class Student:
                     subj[1].get_subject(subj[0]).add_student(self)
     
 
-    def clean_data(self):
+    def clear_data(self):
         """Vynuluje vygenerovana data studenta"""
         self._is_locked = False
         self.__update_combination(None)

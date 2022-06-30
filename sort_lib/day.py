@@ -20,7 +20,7 @@ class Day:
 
     def get_subject(self, subject_name: str) -> sort_lib.subject.Subject:
         temp = list(filter(lambda x: x.name == subject_name, self.__subjects))
-        return temp[0] if temp is not None else None
+        return temp[0] if len(temp) > 0 else None
     
 
     def add_subject(self, subject: sort_lib.subject.Subject) -> bool:

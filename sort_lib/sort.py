@@ -323,7 +323,7 @@ class Sort:
                 for subj in self.__days[i].subjects:
                     f.write(subj.name + '\n')
                     # vypis informaci studenta
-                    for student in subj.students:
+                    for student in sorted(subj.students, key=lambda x: int(x.id)):
                         f.write(f'{student.id},{student.first_name},{student.last_name},{student.class_id}\n')
                     f.write('\n')
                 f.write('\n')
