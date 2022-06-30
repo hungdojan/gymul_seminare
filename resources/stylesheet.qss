@@ -14,6 +14,22 @@ QPushButton#ChosenButton {
     background-color: #8ed2cd;
 }
 
+GStudent[status = "noComb"]{
+    background-color: #f59b7c;
+}
+
+GStudent[status = "mulComb"]{
+    background-color: #fed776;
+}
+
+GStudent[status = "mulSet"]{
+    background-color: #8ed2cd;
+}
+
+GStudent[status = "onlyOne"]{
+    background-color: #c2ed98;
+}
+
 /*
 'green'   : '#c2ed98',
 'red'     : '#f59b7c',

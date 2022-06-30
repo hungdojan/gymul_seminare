@@ -2,7 +2,6 @@ from sort_lib.day import Day
 import gui_lib.g_main_window
 from PySide6.QtWidgets import *
 from PySide6.QtCore import Signal, Slot
-# from PyQt6.QtGui import 
 
 class GDay(QFrame):
 

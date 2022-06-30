@@ -1,7 +1,7 @@
 from sort_lib.student import Student
 from PySide6.QtWidgets import *
 from PySide6.QtCore import Slot, Qt, Signal
-from PySide6.QtGui import QMouseEvent, QPalette
+from PySide6.QtGui import QMouseEvent, QPalette, QPaintEvent, QPainter
 import gui_lib.g_main_window
 from gui_lib.g_combobox import GComboBox
 import gui_lib.g_constants
@@ -18,6 +18,8 @@ class GStudent(QWidget):
         self._base_gparent.content_refreshed.connect(self.update_content)
 
         self._setupUI()
+        self.setProperty('status', 'noComb')
+        self.update_css_property()
 
         base_layout.insertWidget(base_layout.count() - 1, self)
         self.setAutoFillBackground(True)
@@ -72,22 +74,42 @@ class GStudent(QWidget):
 
     def remove_widget(self):
         self.setParent(None)
+    
+
+    def update_css_property(self):
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
+    
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        opt = QStyleOption()
+        opt.initFrom(self)
+        p = QPainter(self)
+        self.style().drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, p, self)
+        super().paintEvent(event)
+
 
     @Slot()
     def update_content(self):
         # TODO:
 
         # nastaveni barvy pozadi zaka
-        pal = QPalette()
+        # pal = QPalette()
         if len(self.model.possible_comb) < 1:
-            pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_FAILED)
+            self.setProperty('status', 'noComb')
+            # pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_FAILED)
         elif len(self.model.possible_comb) > 0 and self.model.chosen_comb is None:
-            pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE)
+            self.setProperty('status', 'mulComb')
+            # pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE)
         elif len(self.model.possible_comb) > 1 and self.model.chosen_comb is not None:
-            pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE_CHOSEN)
+            self.setProperty('status', 'mulSet')
+            # pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_MULTIPLE_CHOSEN)
         else:
-            pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_PASSED)
-        self.setPalette(pal)
+            self.setProperty('status', 'onlyOne')
+            # pal.setColor(QPalette.ColorRole.Window, gui_lib.g_constants.GWidgetColors.STUDENT_PASSED)
+        # self.setPalette(pal)
+        self.update_css_property()
 
 
     @Slot()
