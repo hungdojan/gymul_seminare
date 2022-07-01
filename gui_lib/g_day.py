@@ -1,22 +1,26 @@
 from sort_lib.day import Day
 import gui_lib.g_main_window
+from gui_lib.g_subject import GSubject
 from PySide6.QtWidgets import *
 from PySide6.QtCore import Signal, Slot
+from PySide6.QtGui import QPaintEvent, QPainter
 
 class GDay(QFrame):
 
     def __init__(self, model: Day, base_layout: QBoxLayout, base_gparent: 'gui_lib.g_main_window.GMainWindow'):
         super().__init__()
         self._model = model
-        self.setFrameShape(QFrame.Shape.Box)
-        self.setLineWidth(3)
-        self.setLayout(QGridLayout())
-        for i in range(len(base_gparent.model.subjects)):
-            btn = QPushButton(base_gparent.model.subjects[i])
-            btn.setCheckable(True)
-            btn.toggled.connect(self.button_toggle)
-            self.layout().addWidget(btn, i // 5, i % 5)
         self._base_gparent = base_gparent
+        self.gsubjects = []
+
+        self.setLayout(QGridLayout())
+        self.WIDTH = 6
+        for i in range(len(base_gparent.model.subjects)):
+            subj = GSubject(base_gparent.model.subjects[i], self)
+            self._base_gparent.content_refreshed.connect(subj.content_update)
+            subj.mouse_pressed.connect(self.update_layout)
+            self.gsubjects.append(subj)
+            self.layout().addWidget(subj, i // self.WIDTH, i % self.WIDTH)
         base_layout.insertWidget(base_layout.count() - 1, self)
     
 
@@ -26,11 +30,31 @@ class GDay(QFrame):
     
 
     @Slot()
-    def button_toggle(self):
-        btn: QPushButton = self.sender()
-        if btn.isChecked():
-            self._model.add_subject_name(btn.text())
+    def update_layout(self):
+        if self._base_gparent.filter_btn.isChecked():
+            # zobrazi na zacatku tabulky oznacene predmety
+            list(map(lambda x: x.setParent(None), self.gsubjects))
+            selected = sorted(list(filter(lambda x: x.property('isSelected'), self.gsubjects)), key=lambda x: x.name)
+            not_selected = sorted(list(filter(lambda x: not x.property('isSelected'), self.gsubjects)), key=lambda x: x.name)
+            for i in range(len(self.gsubjects)):
+                if i < len(selected):
+                    self.layout().addWidget(selected[i], i // self.WIDTH, i % self.WIDTH)
+                else:
+                    self.layout().addWidget(not_selected[i - len(selected)], i // self.WIDTH, i % self.WIDTH)
         else:
-            self._model.remove_subject(btn.text())
-        print(list(map(lambda x: x.name, self._model.subjects)))
-        self._base_gparent.content_refreshed.emit()
+            list(map(lambda x: x.setParent(None), self.gsubjects))
+            for i in range(len(self.gsubjects)):
+                self.layout().addWidget(self.gsubjects[i], i // self.WIDTH, i % self.WIDTH)
+    
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """Predefinuje funkci paintEvent
+
+        Args:
+            event (QPaintEvent): Promenna udalosti QPaintEvent
+        """
+        opt = QStyleOption()
+        opt.initFrom(self)
+        p = QPainter(self)
+        self.style().drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, p, self)
+        super().paintEvent(event)

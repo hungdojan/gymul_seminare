@@ -9,13 +9,14 @@ from gui_lib.g_constants import StudentStatus
 class GStudent(QWidget):
 
     locked_triggered = Signal()
+    update_style_triggered = Signal()
 
     def __init__(self, model: Student, base_layout: QBoxLayout, base_gparent: 'gui_lib.g_main_window.GMainWindow'):
         super().__init__()
         self._model = model
         self._base_gparent = base_gparent
-        # self._is_selected = False
         self._base_gparent.content_refreshed.connect(self.update_content)
+        self.update_style_triggered.connect(self.update_style)
 
         self._setupUI()
         self.setProperty('status', StudentStatus.NO_COMB)
@@ -64,6 +65,7 @@ class GStudent(QWidget):
             cb.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             cb.setEditable(True)
             cb.lineEdit().setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.update_style_triggered.connect(cb.update_style)
             self.subjects_cb.append(cb)
         
 
@@ -79,10 +81,11 @@ class GStudent(QWidget):
         if a0.button() == Qt.MouseButton.RightButton:
             self.model.is_locked = not self.model.is_locked
             self.locked_triggered.emit()
-        if a0.button() == Qt.MouseButton.LeftButton:
+        elif a0.button() == Qt.MouseButton.MiddleButton:
             self.setProperty('isSelected', not self.property('isSelected'))
             self._base_gparent.select_student(self, self.property('isSelected'))
-            self.update_style()
+            self.update_style_triggered.emit()
+        elif a0.button() == Qt.MouseButton.LeftButton:
             # TODO: choose subject combination
             pass
         super().mousePressEvent(a0)
@@ -90,13 +93,6 @@ class GStudent(QWidget):
 
     def remove_widget(self):
         self.setParent(None)
-    
-
-    def update_style(self):
-        list(map(lambda x: x.update_style(), self.subjects_cb))
-        self.style().unpolish(self)
-        self.style().polish(self)
-        self.update()
     
 
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -113,6 +109,13 @@ class GStudent(QWidget):
 
 
     @Slot()
+    def update_style(self):
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
+
+
+    @Slot()
     def update_content(self):
         # TODO:
 
@@ -125,8 +128,8 @@ class GStudent(QWidget):
             self.setProperty('status', StudentStatus.MUL_SET)
         else:
             self.setProperty('status', StudentStatus.ONLY_ONE)
-        self.update_style()
-        self.on_locked_triggered()
+        self.update_style_triggered.emit()
+        self.locked_triggered.emit()
 
 
     @Slot(list)

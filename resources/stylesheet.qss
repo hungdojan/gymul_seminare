@@ -67,6 +67,26 @@ GComboBox:disabled {
 GMainWindow {
 }
 
+/* GSubject style */
+GSubject[isSelected = 'false'] {
+    border: solid;
+    border-width: 3px;
+    background-color: dodgerblue;
+}
+
+GSubject[isSelected = 'true'] {
+    border: solid;
+    border-width: 3px;
+    background-color: lightcoral;
+}
+
+/* GDay style */
+GDay {
+    border: solid;
+    border-width: 3px;
+    border-radius: 10px;
+}
+
 /* temporary colors
 https://www.color-hex.com/color-palette/94888
 {

@@ -5,6 +5,8 @@ import sort_lib.sort
 from gui_lib.g_student import GStudent
 from gui_lib.g_day import GDay
 from gui_lib.g_constants import StudentStatus
+from gui_lib.g_about import GAbout
+from gui_lib.g_help import GHelp
 import rc
 
 class GMainWindow(QMainWindow):
@@ -101,10 +103,14 @@ class GMainWindow(QMainWindow):
         add_action('Zavřít', self.close, file_menu, 'Alt+F4')
 
         # student menu
-        student_menu = self.menu_bar.addMenu('Student')
-        add_action('Přidat studenta', self.slt_add_student, student_menu)
-        add_action('Smazat studenta', self.slt_delete_student, student_menu)
-        student_menu.addSeparator()
+        edit_menu = self.menu_bar.addMenu('Upravit')
+        add_action('Přidat studenta', self.slt_add_student, edit_menu)
+        add_action('Smazat studenta', self.slt_delete_student, edit_menu)
+        # edit_menu.addSeparator()
+
+        view_menu = self.menu_bar.addMenu('Zobrazit')
+        todo = view_menu.addAction('TODO')
+        # TODO:
 
         help_menu = self.menu_bar.addMenu('Nápověda')
         add_action('Nápověda', self.slt_help, help_menu, 'F1')
@@ -171,9 +177,12 @@ class GMainWindow(QMainWindow):
         w.setLayout(QHBoxLayout())
         add_btn = QPushButton('ADD')
         add_btn.clicked.connect(self.slt_add_day)
+        self.filter_btn = QPushButton('FILTER')
+        self.filter_btn.setCheckable(True)
         delete_btn = QPushButton('DELETE')
         delete_btn.clicked.connect(lambda: print('delete'))
         w.layout().addWidget(add_btn)
+        w.layout().addWidget(self.filter_btn)
         w.layout().addWidget(delete_btn)
         self.main_grid_layout.addWidget(w, 0, 3)
 
@@ -370,9 +379,11 @@ class GMainWindow(QMainWindow):
     
     @Slot()
     def slt_add_day(self):
-        # TODO:
         new_day = self.model.add_day()
-        self.lof_gdays.append(GDay(new_day, self.days_scrollarea.widget().layout(), self))
+        gday = GDay(new_day, self.days_scrollarea.widget().layout(), self)
+
+        self.filter_btn.toggled.connect(gday.update_layout)
+        self.lof_gdays.append(gday)
         print('add day')
     
 
@@ -388,7 +399,7 @@ class GMainWindow(QMainWindow):
     
     @Slot()
     def slt_help(self):
-        help_dialog = QDialog()
+        help_dialog = GHelp()
         help_dialog.show()
         help_dialog.exec()
         # TODO:
@@ -396,7 +407,7 @@ class GMainWindow(QMainWindow):
 
     @Slot()
     def slt_about(self):
-        about_dialog = QDialog()
+        about_dialog = GAbout()
         about_dialog.show()
         about_dialog.exec()
         # TODO:
