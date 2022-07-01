@@ -22,30 +22,47 @@ GStudent QLabel {
     font-weight: bold;
 }
 
-GStudent[status = "noComb"] {
+GStudent[isSelected = 'true'][status = "noComb"] {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0.02, stop:0 #000, stop:0.08 #f59b7c);
+}
+GStudent[isSelected = 'false'][status = "noComb"] {
     background-color: #f59b7c;
 }
 
-GStudent[status = "mulComb"] {
+GStudent[isSelected = 'true'][status = "mulComb"] {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0.02, stop:0 #000, stop:0.08 #fed776);
+}
+GStudent[isSelected = 'false'][status = "mulComb"] {
     background-color: #fed776;
 }
 
-GStudent[status = "mulSet"] {
+GStudent[isSelected = 'true'][status = "mulSet"] {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0.02, stop:0 #000, stop:0.08 #8ed2cd);
+}
+GStudent[isSelected = 'false'][status = "mulSet"] {
     background-color: #8ed2cd;
 }
 
-GStudent[status = "onlyOne"] {
+GStudent[isSelected = 'true'][status = "onlyOne"] {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0.02, stop:0 #000, stop:0.08 #c2ed98);
+}
+GStudent[isSelected = 'false'][status = "onlyOne"] {
     background-color: #c2ed98;
 }
 
-GStudent[isSelected = "true"] {
-    border: dotted;
-    border-color: #111;
-    border-width: 2px;
+/* test */
+GStudent[isSelected = "true"][status = 'noComb'] {
+}
+GStudent[isSelected = "false"][status = 'noComb'] {
+    background-color: #f59b7c;
 }
 
-GStudent[isSelected = "false"] {
-    border: none;
+/* Selected GStudent's highlight */
+GStudent[isSelected='true'] QLabel#id {
+    color: white;
+}
+GStudent[isSelected='false'] QLabel#id {
+    color: balck;
 }
 
 /* Subject combobox collision highlight */

@@ -49,7 +49,7 @@ class GStudent(QWidget):
         self.locked_triggered.connect(self.on_locked_triggered)
 
         # FIXME: lock_checkbox = QCheckBox()
-        self.id_lbl = QLabel(self.model.id)
+        self.id_lbl = QLabel(self.model.id, objectName='id')
         self.first_name_lbl = QLabel(self.model.first_name)
         self.last_name_lbl = QLabel(self.model.last_name)
         self.class_id_lbl = QLabel(self.model.class_id)
@@ -110,6 +110,10 @@ class GStudent(QWidget):
 
     @Slot()
     def update_style(self):
+        self.id_lbl.style().unpolish(self.id_lbl)
+        self.id_lbl.style().polish(self.id_lbl)
+        self.id_lbl.update()
+
         self.style().unpolish(self)
         self.style().polish(self)
         self.update()
