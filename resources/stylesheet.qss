@@ -18,6 +18,9 @@ QPushButton#ChosenButton {
 }
 
 /* GStudent settings */
+GStudent QLabel {
+    font-weight: bold;
+}
 
 GStudent[status = "noComb"] {
     background-color: #f59b7c;
@@ -68,6 +71,10 @@ GMainWindow {
 }
 
 /* GSubject style */
+GSubject QLabel {
+    font-size: 10pt;
+}
+
 GSubject[isSelected = 'false'] {
     border: solid;
     border-width: 3px;
@@ -80,8 +87,18 @@ GSubject[isSelected = 'true'] {
     background-color: lightcoral;
 }
 
+GSubject[isSelected = 'true'] QLabel {
+    font-weight: bold;
+}
+
 /* GDay style */
-GDay {
+GDay[isSelected = 'true'] {
+    border: dashed;
+    border-width: 3px;
+    border-radius: 10px;
+}
+
+GDay[isSelected = 'false'] {
     border: solid;
     border-width: 3px;
     border-radius: 10px;

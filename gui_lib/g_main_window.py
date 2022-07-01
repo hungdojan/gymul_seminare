@@ -382,7 +382,7 @@ class GMainWindow(QMainWindow):
         new_day = self.model.add_day()
         gday = GDay(new_day, self.days_scrollarea.widget().layout(), self)
 
-        self.filter_btn.toggled.connect(gday.update_layout)
+        self.filter_btn.toggled.connect(gday.filter_toggle)
         self.lof_gdays.append(gday)
         print('add day')
     

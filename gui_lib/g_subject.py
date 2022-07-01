@@ -50,7 +50,8 @@ class GSubject(QFrame):
                 self._model = None
             self.content_update()
             self.mouse_pressed.emit()
-        super().mousePressEvent(event)
+        else:
+            super().mousePressEvent(event)
     
 
     def paintEvent(self, event: QPaintEvent) -> None:
