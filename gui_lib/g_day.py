@@ -85,7 +85,7 @@ class GDay(QFrame):
 
     @Slot()
     def update_style(self):
-        """Aktualizuje vzhled GComboBox"""
+        """Aktualizuje vzhled GDay"""
         self.style().unpolish(self)
         self.style().polish(self)
         self.update()

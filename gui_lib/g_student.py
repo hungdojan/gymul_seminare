@@ -35,29 +35,30 @@ class GStudent(QWidget):
     
 
     @property
-    def model(self):
+    def model(self) -> Student:
         return self._model
     
 
     @property
-    def base_gparent(self):
+    def base_gparent(self) -> 'gui_lib.g_main_window.GMainWindow':
         return self._base_gparent
 
 
-    def get_status(self):
+    def get_status(self) -> str:
         return self.property('status')
 
 
-    def isSelected(self):
+    def isSelected(self) -> bool:
         return self.property('isSelected')
     
 
-    def _setupUI(self):
+    def _setupUI(self) -> None:
         self.setLayout(QHBoxLayout())
         self.layout().setSpacing(1)
         self.layout().setContentsMargins(10, 3, 10, 3)
 
         font = QFont('Font Awesome 6 Free Solid')
+        # znak zamku
         self.lock_lbl = QLabel(objectName='id')
         self.lock_lbl.setFixedWidth(20)
         self.lock_lbl.setFont(font)
@@ -69,6 +70,8 @@ class GStudent(QWidget):
         self.first_name_lbl = QLabel(self.model.first_name)
         self.last_name_lbl = QLabel(self.model.last_name)
         self.class_id_lbl = QLabel(self.model.class_id)
+
+        # ComboBoxy jednotlivych predmetu
         self.subjects_cb = []
         for i in self._model.lof_subjects:
             cb = GComboBox()
@@ -76,11 +79,10 @@ class GStudent(QWidget):
             index = cb.findText(i)
             cb.setCurrentIndex(index)
             cb.currentIndexChanged.connect(self.update_subjects)
-            # TODO: update combination
             self.update_style_triggered.connect(cb.update_style)
             self.subjects_cb.append(cb)
         
-
+        # pridani jednotlivych elementu do hlavniho elementu GStudent
         self.layout().addWidget(self.lock_lbl)
         self.layout().addWidget(self.id_lbl)
         self.layout().addWidget(self.first_name_lbl, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -100,10 +102,6 @@ class GStudent(QWidget):
         super().mousePressEvent(a0)
 
 
-    def remove_widget(self):
-        self.setParent(None)
-    
-
     def paintEvent(self, event: QPaintEvent) -> None:
         """Predefinuje funkci paintEvent
 
@@ -119,6 +117,7 @@ class GStudent(QWidget):
 
     @Slot()
     def update_style(self):
+        """Aktualizuje vzhled GStudent"""
         self.lock_lbl.style().unpolish(self.lock_lbl)
         self.lock_lbl.style().polish(self.lock_lbl)
         self.lock_lbl.update()
@@ -133,9 +132,8 @@ class GStudent(QWidget):
 
 
     @Slot()
-    def update_content(self):
-        # TODO:
-
+    def update_content(self) -> None:
+        """Aktualizuje hodnotu 'status'"""
         # nastaveni barvy pozadi zaka
         if len(self.model.possible_comb) < 1:
             self.setProperty('status', StudentStatus.NO_COMB)
@@ -172,6 +170,11 @@ class GStudent(QWidget):
 
     @Slot(QPoint)
     def show_context_menu(self, point: QPoint):
+        """Zobrazuje context menu po kliknutim pravym tlacitkem na element
+
+        Args:
+            point (QPoint): Informace o miste kliknuti
+        """
         context_menu = QMenu(self)
 
         # vybira kombinaci studenta
@@ -198,7 +201,8 @@ class GStudent(QWidget):
         context_menu.exec(self.mapToGlobal(point))
     
     @Slot()
-    def lock_trigger(self):
+    def lock_trigger(self) -> None:
+        """Slot, ktery reaguje na prepnuti zamku"""
         action: QAction = self.sender()
         self.model.is_locked = action.isChecked()
         if self.model.is_locked:
@@ -210,14 +214,16 @@ class GStudent(QWidget):
     
 
     @Slot()
-    def update_data(self):
+    def update_data(self) -> None:
+        """Aktualizace dat studenta z backendu"""
         self.first_name_lbl.setText(self.model.first_name)
         self.last_name_lbl.setText(self.model.last_name)
         self.class_id_lbl.setText(self.model.class_id)
     
 
     @Slot()
-    def delete_gstudent(self):
+    def delete_gstudent(self) -> None:
+        """Mazani tohoto studenta z programu"""
         self._base_gparent.model.remove_student(self.model.id)
         self.setParent(None)
     

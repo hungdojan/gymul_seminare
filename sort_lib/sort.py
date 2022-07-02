@@ -106,7 +106,6 @@ class Sort:
         self._is_sorted = False
         list(map(lambda x: x.remove_subject(name), self.__days))
         self.__subjects.discard(name)
-        # TODO: remove from students
     
 
     def add_student(self, student: Student) -> bool:
@@ -218,7 +217,7 @@ class Sort:
             Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem
 
         Returns:
-            list: Seznam jmeno nove pridanym predmetu
+            list: Seznam jmen nove pridanym predmetu
         """
         # seznam koliznich jmen predmetu
         new_subjs = []

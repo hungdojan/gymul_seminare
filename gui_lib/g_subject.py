@@ -69,7 +69,7 @@ class GSubject(QFrame):
 
     @Slot()
     def update_style(self):
-        """Aktualizuje vzhled GComboBox"""
+        """Aktualizuje vzhled GSubject"""
         self.style().unpolish(self)
         self.style().polish(self)
         self.update()
