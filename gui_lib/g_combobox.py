@@ -7,26 +7,20 @@ class GComboBox(QComboBox):
     def __init__(self, parent: QWidget=None):
         super().__init__(parent)
         self.setProperty('valid', 'true')
-        self.setDisabled(True)
+
+        # nastaveni ComboBoxu
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setEditable(True)
+        self.lineEdit().setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lineEdit().setReadOnly(True)
     
 
     def wheelEvent(self, e: QWheelEvent) -> None:
         # ignore event
         pass
-    
-
-    def focusInEvent(self, e: QFocusEvent) -> None:
-        # ignore event
-        pass
-
-    
-    def keyPressEvent(self, e: QKeyEvent) -> None:
-        # ignore event
-        pass
 
 
-    def update_style(self):
+    def update_style(self) -> None:
         """Aktualizuje vzhled GComboBox"""
         self.style().unpolish(self)
         self.style().polish(self)

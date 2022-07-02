@@ -10,6 +10,8 @@ class GEditStudentDialog(QDialog):
 
         self.setWindowTitle('Upravit data studenta')
         self.setLayout(QVBoxLayout())
+
+        # nastaveni rozlozeni formulare
         form_w = QWidget()
         form_w.setLayout(QFormLayout())
         self.fn_lbl = QLineEdit(self.gstudent.model.first_name)
@@ -20,12 +22,14 @@ class GEditStudentDialog(QDialog):
         form_w.layout().addRow("Třída:", self.class_lbl)
         self.layout().addWidget(form_w)
 
+        # tlacitka v dolni casti okna
         button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         self.layout().addWidget(button_box)
     
     def accept(self) -> None:
+        """Akce po uspesnem ukonceni dialogoveho okna"""
         self.gstudent.model.first_name = self.fn_lbl.text()
         self.gstudent.model.last_name = self.ln_lbl.text()
         self.gstudent.model.class_id = self.class_lbl.text()
