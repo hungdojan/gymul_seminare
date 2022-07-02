@@ -33,14 +33,26 @@ class Student:
     @property
     def first_name(self) -> str:
         return self.__first_name
+    
+    @first_name.setter
+    def first_name(self, value):
+        self.__first_name = value
 
     @property
     def last_name(self) -> str:
         return self.__last_name
 
+    @last_name.setter
+    def last_name(self, value):
+        self.__last_name = value
+
     @property
     def class_id(self) -> str:
         return self.__class_id
+    
+    @class_id.setter
+    def class_id(self, value):
+        self.__class_id = value
     
     @property
     def chosen_comb(self) -> tuple:
@@ -66,7 +78,8 @@ class Student:
 
     @is_locked.setter
     def is_locked(self, value):
-        self._is_locked = value
+        if self.__chosen_comb is not None:
+            self._is_locked = value
     
     @possible_comb.setter
     def possible_comb(self, value: list):
