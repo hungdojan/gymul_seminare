@@ -1,4 +1,5 @@
 import sort_lib.student
+from PySide6.QtCore import QJsonArray
 
 class Subject:
     
@@ -57,6 +58,22 @@ class Subject:
     def clear_data(self) -> None:
         """Vymaze seznam studentu zapsanych v danem predmetu"""
         list(map(lambda x: x.clear_data(), reversed(self.__students)))
+
+    
+    def get_qjson(self) -> dict:
+        """Vygeneruje JSON objekt pro ulozeni backendu
+
+        Returns:
+            dict: Vygenerovany JSON objekt
+        """
+        obj = {}
+        obj['_type'] = 'Subject'
+        obj['name'] = self.__name
+        obj['students'] = QJsonArray()
+        list(map(
+            lambda x: obj['students'].push_back(x),
+            list(map(lambda x: x.id, self.__students))))
+        return obj
 
 
     def __repr__(self):

@@ -1,4 +1,5 @@
 import sort_lib.subject
+from PySide6.QtCore import QJsonArray
 
 class Day:
 
@@ -74,6 +75,19 @@ class Day:
         """Vymaze vsechny predmety v danem dni"""
         list(map(lambda x: x.clear_data(), self.__subjects))
         self.__subjects.clear()
+
+    
+    def get_qjson(self) -> dict:
+        """Vygeneruje JSON objekt pro ulozeni backendu
+
+        Returns:
+            dict: Vygenerovany JSON objekt
+        """
+        obj = {}
+        obj['subjects'] = QJsonArray()
+        obj['_type'] = "Day"
+        list(map(lambda x: obj['subjects'].push_back(x.get_qjson()), self.__subjects))
+        return obj
     
 
     def clear_subjects(self):

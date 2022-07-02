@@ -1,4 +1,5 @@
 import sort_lib.sort
+from PySide6.QtCore import QJsonArray
 
 class Student:
 
@@ -150,6 +151,33 @@ class Student:
         self._is_locked = False
         self.__update_combination(None)
         self.__possible_comb = []
+
+    
+    def get_qjson(self) -> dict:
+        """Vygeneruje JSON objekt pro ulozeni backendu
+
+        Returns:
+            dict: Vygenerovany JSON objekt
+        """
+        obj = {}
+        obj['_type'] = "Student"
+        obj['is_locked'] = self._is_locked
+        obj['id'] = self.__id
+        obj['first_name'] = self.__first_name
+        obj['last_name'] = self.__last_name
+        obj['class_id'] = self.__class_id
+        obj['lof_subjects'] = QJsonArray()
+        list(map(lambda x: obj['lof_subjects'].push_back(x), self.__lof_subjects))
+        obj['possible_comb'] = QJsonArray()
+        for comb in self.possible_comb:
+            arr = QJsonArray()
+            list(map(lambda x: arr.push_back(str(x)), comb))
+            obj['possible_comb'].push_back(arr)
+        obj['chosen_comb'] = QJsonArray()
+        if self.__chosen_comb is not None:
+            list(map(lambda x: obj['chosen_comb'].push_back(str(x)), self.chosen_comb))
+        return obj
+
     
     def __repr__(self) -> str:
         out_str = f'{self.__id},{self.__first_name},{self.__last_name},{self.__class_id}'

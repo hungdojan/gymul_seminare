@@ -6,6 +6,7 @@ from sort_lib.constants import (FILE_TYPE, FILE_DELIM, EOF, FILE_STUDENT_FORMAT_
                                 FILE_SUBJECT_FORMAT_REGEX, OUT_DAYS, OUT_STUDENTS)
 from sort_lib.student import Student
 from sort_lib.day import Day
+from PySide6.QtCore import QJsonArray, QJsonDocument, QFile, QIODevice
 
 
 class Sort:
@@ -20,7 +21,10 @@ class Sort:
 
     class DataNotSortedException(Exception):
         pass
-    
+
+    class JsonFileCorruptedException(Exception):
+        pass
+
     def __init__(self):
         # Seznam studentu
         self.__students = []
@@ -49,12 +53,6 @@ class Sort:
     @property
     def is_sorted(self):
         return self._is_sorted
-
-
-    @classmethod
-    def load_save_file(path: str) -> 'Sort':
-        # TODO:
-        return Sort()
 
 
     def add_day(self) -> Day:
@@ -167,7 +165,7 @@ class Sort:
             Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem
 
         Returns:
-            list: Seznam ID nove pridanych zaku
+            list: Seznam ID nove pridanych studentu
         """
         # seznam ID novych studentu
         new_students_id = []
@@ -241,9 +239,9 @@ class Sort:
                 data = re.split(FILE_DELIM, line.rstrip(EOF))
                 data = list(map(lambda x: x.strip(), data))
 
-                # kontrola, zda neexistuje  se stejnym id
-                # pokud student existuje, je preskocen
-                if len(list(filter(lambda x: x.id == data[0], self.__students))) < 1:
+                # kontrola, zda neexistuje se stejnym jmenem
+                # pokud predmet existuje, je preskocen
+                if len(list(filter(lambda x: x == data[0], self.__subjects))) < 1:
                     self.__subjects.add(data[0])
                     new_subjs.append(data[0])
 
@@ -333,9 +331,38 @@ class Sort:
                 f.write(f'{student}\n')
 
 
-    def save_to_json(self):
-        # TODO:
-        pass
+    def save_to_json(self) -> str:
+        """Vraci retezcovou reprezentaci backend objektu v JSON formatu
+
+        Je potreba pred ulozenim backendu setridit data.
+
+        Raises:
+            Sort.DataNotSortedException: Data nejsou setrizena
+
+        Returns:
+            str: Vygenerovany retezec JSON objektu
+        """
+        if not self._is_sorted:
+            raise Sort.DataNotSortedException('Cannot save unsorted data')
+
+        main_obj = {}
+        main_obj['_type'] = "Sort"
+        main_obj['students'] = QJsonArray()
+        # seznam json objektu Student
+        list(map(lambda x: main_obj['students'].push_back(x.get_qjson()), self.__students))
+
+        # seznam json objektu Day
+        main_obj['days'] = {}
+        for i in range(len(self.__days)):
+            main_obj['days'][f'{i+1}'] = self.__days[i].get_qjson()
+            
+        # seznam predmetu
+        main_obj['subjects'] = QJsonArray()
+        list(map(lambda x: main_obj['subjects'].push_back(x), sorted(self.__subjects)))
+
+        json_doc = QJsonDocument()
+        json_doc.setObject(main_obj)
+        return str(json_doc.toJson(), 'utf-8')
 
 
     def clear_data(self):
@@ -344,3 +371,76 @@ class Sort:
         self.__days.clear()
         self.__subjects.clear()
         self._is_sorted = False
+
+
+    @staticmethod
+    def load_save_file(path: str) -> 'Sort':
+        """Generuje objekt Sort ze vstupniho JSON souboru
+
+        Args:
+            path (str): Cesta k JSON souboru
+
+        Raises:
+            Sort.JsonFileCorruptedException: Vstupni JSON soubor je poskozeny/neodpovida zakladnimu formatu
+
+        Returns:
+            Sort: Inicializovany Sort objekt
+        """
+        # cteni ze souboru
+        f = QFile(path)
+        f.open(QIODevice.OpenModeFlag.ReadOnly)
+        json_str = f.readAll()
+        json_doc = QJsonDocument.fromJson(json_str)
+        if json_str.isEmpty() or not json_doc.isObject():
+            raise Sort.JsonFileCorruptedException(f'JSON file {path} is corrupted')
+
+        # nacitani dat
+        model = Sort()
+        main_obj = json_doc.object()
+        if main_obj['_type'] != 'Sort':
+            raise Sort.JsonFileCorruptedException('JSON error: Expected Sort object')
+        
+        # predmety
+        subj_arr = main_obj['subjects']
+        model.__subjects = subj_arr
+
+        # dny
+        for day_index in sorted(main_obj['days']):
+            if main_obj['days'][day_index]['_type'] != 'Day':
+                raise Sort.JsonFileCorruptedException('JSON error: expected Day object')
+            day = model.add_day()
+            for subject in main_obj['days'][day_index]['subjects']:
+                if subject['_type'] != 'Subject':
+                    raise Sort.JsonFileCorruptedException('JSON error: expected Subject object')
+                day.add_subject_name(subject['name'])
+            pass
+
+        # studenti
+        for student_json in main_obj['students']:
+            if student_json['_type'] != 'Student':
+                raise Sort.JsonFileCorruptedException('JSON error: expected Student object')
+            model.__students.append(
+                Student(
+                    student_json['id'],
+                    student_json['first_name'],
+                    student_json['last_name'],
+                    student_json['class_id'],
+                    tuple(student_json['lof_subjects'])
+                )
+            )
+        
+        model.sort_data()
+        # studenti s aktualizovanymi predmety
+        for student in list(filter(lambda x: len(x.possible_comb) > 0, model.students)):
+            student_json = list(filter(lambda x: x['id'] == student.id,
+                                       main_obj['students']))[0]
+            if len(student_json['chosen_comb']) == 0:
+                student.set_comb(-1)
+            else:
+                comb = list(map(lambda x: x if x != 'None' else None, student_json['chosen_comb']))
+                student.set_comb(student.possible_comb.index(tuple(comb)))
+            student._is_locked = student_json['is_locked']
+        
+        model._is_sorted = True
+
+        return model

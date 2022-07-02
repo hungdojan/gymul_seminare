@@ -20,7 +20,7 @@ class GSubject(QFrame):
         self.update_style_triggered.connect(self.update_style)
         self.name_lbl = QLabel(self._name)
         self.counter_lbl = QLabel('0')
-        self.setProperty('isSelected', False)
+        self.setProperty('isSelected', model is not None)
 
         self.layout().addWidget(self.name_lbl, alignment=Qt.AlignmentFlag.AlignCenter)
 

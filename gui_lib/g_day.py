@@ -18,7 +18,8 @@ class GDay(QFrame):
         self.setLayout(QGridLayout())
         self.WIDTH = 5
         for i in range(len(base_gparent.model.subjects)):
-            subj = GSubject(base_gparent.model.subjects[i], self)
+            subj = GSubject(base_gparent.model.subjects[i], self, 
+                            self._model.get_subject(base_gparent.model.subjects[i]))
             self._base_gparent.content_refreshed.connect(subj.content_update)
             subj.mouse_pressed.connect(self.update_layout)
             self.gsubjects.append(subj)
