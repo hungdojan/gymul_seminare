@@ -22,14 +22,14 @@ class GMainWindow(QMainWindow):
         # FIXME: TESTING PURPOSES
         self.model.load_file_subjects('./data/input_predmety.csv')
         self.model.load_file_students('./data/input_zaci-2R-anonym.csv')
-        den1 = self.model.add_day()
-        list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
-        den2 = self.model.add_day()
-        list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
-        den3 = self.model.add_day()
-        list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
-        den4 = self.model.add_day()
-        list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
+        # den1 = self.model.add_day()
+        # list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
+        # den2 = self.model.add_day()
+        # list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
+        # den3 = self.model.add_day()
+        # list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
+        # den4 = self.model.add_day()
+        # list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
         # END TESTING
 
         self.setupUI()
@@ -41,11 +41,11 @@ class GMainWindow(QMainWindow):
         self.load_stylesheet()
 
     @property
-    def model(self):
+    def model(self) -> 'sort_lib.sort.Sort':
         return self._model
 
 
-    def setupUI(self):
+    def setupUI(self) -> None:
         self.setWindowTitle('Seminare')
         # nastaveni pracovni plochy
         main_widget = QWidget()
@@ -70,7 +70,7 @@ class GMainWindow(QMainWindow):
         self.showMaximized()
     
 
-    def _setup_menu_bar(self):
+    def _setup_menu_bar(self) -> None:
         """ Vygeneruje horni listu """
         self.menu_bar = QMenuBar(self)
         self.setMenuBar(self.menu_bar)
@@ -117,7 +117,7 @@ class GMainWindow(QMainWindow):
         add_action('O apllikaci', self.slt_about, help_menu)
 
 
-    def _setup_student_panel(self):
+    def _setup_student_panel(self) -> None:
         # skrolovaci plocha
         lof_students_scrar = QScrollArea(self)
         lof_students_scrar.setMinimumWidth(500)
@@ -164,7 +164,7 @@ class GMainWindow(QMainWindow):
                               for student in self.model.students]
     
 
-    def _setup_day_panel(self):
+    def _setup_day_panel(self) -> None:
         self.days_scrollarea = QScrollArea()
         self.days_scrollarea.setWidgetResizable(True)
         self.days_scrollarea.setWidget(QFrame())
@@ -180,7 +180,7 @@ class GMainWindow(QMainWindow):
         self.filter_btn = QPushButton('FILTER')
         self.filter_btn.setCheckable(True)
         delete_btn = QPushButton('DELETE')
-        delete_btn.clicked.connect(lambda: print('delete'))
+        delete_btn.clicked.connect(self.slt_delete_days)
         w.layout().addWidget(add_btn)
         w.layout().addWidget(self.filter_btn)
         w.layout().addWidget(delete_btn)
@@ -189,19 +189,15 @@ class GMainWindow(QMainWindow):
         self.day_widget = QWidget()
         self.day_widget.setLayout(QVBoxLayout())
         self.main_grid_layout.addWidget(self.days_scrollarea, 1, 2, 1, 2)
-        pass
     
 
-    def _setup_right_panel(self):
+    def _setup_right_panel(self) -> None:
         scroll = QScrollArea()
         scroll.setMinimumWidth(200)
         scroll.setWidgetResizable(True)
         frame = QFrame()
-        # frame.mousePressEvent = lambda _: print('clicked')
         scroll.setWidget(frame)
         frame.setLayout(QVBoxLayout())
-        # w = QWidget()
-        # w.setLayout(QVBoxLayout())
         stats = self.model.get_students_per_subject()
         # FIXME: refactor 
         for stat in dict(sorted(stats.items(), key=lambda x: x[1], reverse=True)):
@@ -229,7 +225,7 @@ class GMainWindow(QMainWindow):
         self.main_grid_layout.addWidget(btn, 3, 3)
 
     
-    def load_stylesheet(self):
+    def load_stylesheet(self) -> None:
         """Nacte data z QCSS"""
         stylesheet = QFile(":/stylesheet.qss")
         stylesheet.open(QIODevice.OpenModeFlag.ReadOnly)
@@ -278,81 +274,82 @@ class GMainWindow(QMainWindow):
     
     # slots  
     @Slot()
-    def slt_delete_student(self):
-        # TODO:
+    def slt_delete_student(self) -> None:
+        """Funkce maze oznacene studenty"""
         print('delete student')
         list(map(lambda x: x.delete_gstudent(), self.selected_gstudents))
-        # for gs in self.selected_gstudents:
-        #     gs.remove_widget()
-        #     self.model.remove_student(gs.model)
 
     @Slot()
-    def slt_open_file(self):
+    def slt_open_file(self) -> None:
         # TODO:
         print("open file")
 
 
     @Slot()
-    def slt_save(self):
+    def slt_save(self) -> None:
         # TODO:
         print('save')
 
 
     @Slot()
-    def slt_import_subjects(self):
-        # TODO:
+    def slt_import_subjects(self) -> None:
+        """Slot pro nacteni souboru s predmety"""
         dialog = QFileDialog(self)
         dialog.setWindowTitle('Importovat předměty')
         dialog.setNameFilter('CSV soubor (*.csv)')
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
 
+        # otevreni okna pro vyber souboru
         if not dialog.exec():
             return
         filename = dialog.selectedFiles()[0]
         try:
             new_subj = self.model.load_file_subjects(filename)
             self.subject_list_update.emit(new_subj)
-            # TODO: ADD SUBJECT
         except sort_lib.sort.Sort.FileContentFormatException:
-            # TODO: WRONG FORMAT DIALOG
-            pass
-        print('import subjects')
+            # chybova hlaska programu
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('Chyba při načítání předmětů')
+            msg_box.setText('Vybraný soubor nesplňuje formát pro načtění předmětů')
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec()
 
 
     @Slot()
-    def slt_export(self):
-        # TODO:
-        if not self.model.is_sorted:
-            # TODO: WARNING DIALOG
-            pass
+    def slt_export(self) -> None:
+        """Slot pro vytvoreni vyslednych souboru"""
         dialog = QFileDialog(self)
         dialog.setWindowTitle('Exportovat data')
         dialog.setFileMode(QFileDialog.FileMode.Directory)
 
+        # otevreni okna pro vyber slozky
         if not dialog.exec():
             return
         dirname = dialog.selectedFiles()[0]
         try:
-            new_students = self.model.export_data(dirname)
-            # TODO: ADD STUDENT
-        except sort_lib.sort.Sort.FileContentFormatException:
-            # TODO: WRONG FORMAT DIALOG
-            pass
-        # self.model.sort_data()
-        # # FIXME: remove hardcoded code
-        # self.model.export_data(r'C:\Users\hungd\Documents\GitHub\gymul_seminare\data')
-        print('export data')
+            self.model.export_data(dirname)
+        except sort_lib.sort.Sort.DataNotSortedException:
+            # chybova hlaska pro nesetrizena data
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            # FIXME: update warning text
+            msg_box.setWindowTitle('Nesetřízená data')
+            msg_box.setText('Nelze exportovat zastaralá data')
+            msg_box.setInformativeText('Před exportem je potřeba data setřídit')
+            msg_box.exec()
     
 
     @Slot()
-    def slt_import_students(self):
+    def slt_import_students(self) -> None:
+        """Slot pro nacteni souboru se studenty"""
         dialog = QFileDialog(self)
         dialog.setWindowTitle('Importovat studenty')
         dialog.setNameFilter('CSV soubor (*.csv)')
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
 
         # TODO: SUBJECT CHECK
-
+        # otevreni okna pro vyber souboru
         if not dialog.exec():
             return
         filename = dialog.selectedFiles()[0]
@@ -360,73 +357,67 @@ class GMainWindow(QMainWindow):
             new_ids = self.model.load_file_students(filename)
             new_students = list(filter(lambda x: x.id in new_ids, self.model.students))
             list(map(lambda x: self.lof_gstudents.append(GStudent(x, self.student_vbox, self)), new_students))
-            # TODO: ADD STUDENT
         except sort_lib.sort.Sort.FileContentFormatException:
-            # TODO: WRONG FORMAT DIALOG
-            pass
-        print('import students')
+            # chybova hlaska programu
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('Chyba při načítání studentů')
+            msg_box.setText('Vybraný soubor nesplňuje formát pro načtění studentů')
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec()
 
 
     @Slot()
-    def slt_close_app(self):
+    def slt_close_app(self) -> None:
+        """Funkce ukoncuje program"""
+        # TODO: ask to save progress
         self.close()
     
 
     @Slot()
-    def slt_add_student(self):
+    def slt_add_student(self) -> None:
         # TODO:
         print('add student')
 
     
     @Slot()
-    def slt_add_day(self):
+    def slt_add_day(self) -> None:
+        """Slot prida vygeneruje novy den"""
         new_day = self.model.add_day()
         gday = GDay(new_day, self.days_scrollarea.widget().layout(), self)
 
         self.filter_btn.toggled.connect(gday.filter_toggle)
         self.lof_gdays.append(gday)
-        print('add day')
     
 
     @Slot()
-    def slt_remove_days(self):
-        # TODO:
-        # for gd in self.selected_gdays:
-        #     student = gd.model
-        #     gd.delete()
-        #     self.subsort.delete_student(student)
-        print('remove days')
+    def slt_delete_days(self) -> None:
+        """Slot smaze vybrane dny"""
+        list(map(lambda x: x.delete_gday(), self.selected_gdays))
 
     
     @Slot()
-    def slt_help(self):
+    def slt_help(self) -> None:
+        """Slot otevre okno s napovedou"""
         help_dialog = GHelpDialog()
         help_dialog.show()
-        help_dialog.exec()
-        # TODO:
-        print('help')
 
     @Slot()
-    def slt_about(self):
+    def slt_about(self) -> None:
+        """Slot otevre okno s informacemi o aplikaci"""
         about_dialog = GAboutDialog()
         about_dialog.show()
-        about_dialog.exec()
-        # TODO:
-        print('about')
-    
 
     @Slot()
-    def slt_sort(self):
+    def slt_sort(self) -> None:
+        """Slot provede setrizeni dat"""
         self.model.sort_data()
-        # temp = list(filter(lambda x: len(x.possible_comb) > 1, self.model.students))
-        # TODO: try-except
-        # list(map(lambda x: x.set_comb(0), temp))
         self.content_refreshed.emit()
-        print('sort')
     
 
     @Slot()
-    def filter_students(self):
+    def filter_students(self) -> None:
+        """Slot provadi filtraci studentu podle jejich statusu"""
         # red
         red_students = list(filter(lambda x: x.get_status() == StudentStatus.NO_COMB, self.lof_gstudents))
         list(map(lambda x: x.setVisible(self.buttons['red'].isChecked()), red_students))

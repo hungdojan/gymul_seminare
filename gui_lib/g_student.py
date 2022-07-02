@@ -37,6 +37,11 @@ class GStudent(QWidget):
     @property
     def model(self):
         return self._model
+    
+
+    @property
+    def base_gparent(self):
+        return self._base_gparent
 
 
     def get_status(self):
@@ -68,15 +73,9 @@ class GStudent(QWidget):
         for i in self._model.lof_subjects:
             cb = GComboBox()
             cb.addItems(self._base_gparent.model.subjects)
-            # FIXME:
-            # cb.model().sort(0)
-            # cb.insertItem(0, '-')
             index = cb.findText(i)
             cb.setCurrentIndex(index)
-            cb.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            cb.setEditable(True)
-            cb.setEnabled(True)
-            cb.lineEdit().setAlignment(Qt.AlignmentFlag.AlignCenter)
+            cb.currentIndexChanged.connect(self.update_subjects)
             # TODO: update combination
             self.update_style_triggered.connect(cb.update_style)
             self.subjects_cb.append(cb)
@@ -91,11 +90,6 @@ class GStudent(QWidget):
 
 
     def mousePressEvent(self, a0: QMouseEvent) -> None:
-        # if a0.button() == Qt.MouseButton.RightButton:
-        #     # TODO:
-        #     # self.model.is_locked = not self.model.is_locked
-        #     # self.locked_triggered.emit()
-        #     pass
         if a0.button() == Qt.MouseButton.MiddleButton:
             self.setProperty('isSelected', not self.property('isSelected'))
             self._base_gparent.select_student(self, self.property('isSelected'))
@@ -223,11 +217,14 @@ class GStudent(QWidget):
     
 
     @Slot()
-    def choose_combination_window(self):
-        pass
-    
-
-    @Slot()
     def delete_gstudent(self):
         self._base_gparent.model.remove_student(self.model.id)
         self.setParent(None)
+    
+
+    @Slot(int)
+    def update_subjects(self, index: int):
+        cb: GComboBox = self.sender()
+        sender_index = self.subjects_cb.index(cb)
+        print(sender_index)
+        # TODO:

@@ -58,6 +58,11 @@ class GDay(QFrame):
                 self.layout().addWidget(self.gsubjects[i], i // self.WIDTH, i % self.WIDTH)
     
 
+    def delete_gday(self):
+        self._base_gparent.model.remove_day(self.model)
+        self.setParent(None)
+    
+
     def paintEvent(self, event: QPaintEvent) -> None:
         """Predefinuje funkci paintEvent
 
