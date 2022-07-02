@@ -71,13 +71,6 @@ GComboBox[valid = 'true'] {
     color: #000;
 }
 
-/* GComboBox:disabled { */
-    /* TODO: WILL BE CHANGED IN THE FUTURE */
-    /* background-color: #3e4772; */
-    /* background-color: #292929; */
-    /* color: #eee; */
-/* } */
-
 /* GMainWindow style */
 GMainWindow {
 }
@@ -90,13 +83,13 @@ GSubject QLabel {
 GSubject[isSelected = 'false'] {
     border: solid;
     border-width: 3px;
-    background-color: dodgerblue;
+    background-color: white;
 }
 
 GSubject[isSelected = 'true'] {
     border: solid;
     border-width: 3px;
-    background-color: lightcoral;
+    background-color: #fbf719;
 }
 
 GSubject[isSelected = 'true'] QLabel {
