@@ -5,8 +5,8 @@ import sort_lib.sort
 from gui_lib.g_student import GStudent
 from gui_lib.g_day import GDay
 from gui_lib.g_constants import StudentStatus
-from gui_lib.g_about import GAbout
-from gui_lib.g_help import GHelp
+from gui_lib.g_about_dialog import GAboutDialog
+from gui_lib.g_help_dialog import GHelpDialog
 import rc
 
 class GMainWindow(QMainWindow):
@@ -22,14 +22,14 @@ class GMainWindow(QMainWindow):
         # FIXME: TESTING PURPOSES
         self.model.load_file_subjects('./data/input_predmety.csv')
         self.model.load_file_students('./data/input_zaci-2R-anonym.csv')
-        # den1 = self.model.add_day()
-        # list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
-        # den2 = self.model.add_day()
-        # list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
-        # den3 = self.model.add_day()
-        # list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
-        # den4 = self.model.add_day()
-        # list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
+        den1 = self.model.add_day()
+        list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
+        den2 = self.model.add_day()
+        list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
+        den3 = self.model.add_day()
+        list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
+        den4 = self.model.add_day()
+        list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
         # END TESTING
 
         self.setupUI()
@@ -281,9 +281,10 @@ class GMainWindow(QMainWindow):
     def slt_delete_student(self):
         # TODO:
         print('delete student')
-        for gs in self.selected_gstudents:
-            gs.remove_widget()
-            self.model.remove_student(gs.model)
+        list(map(lambda x: x.delete_gstudent(), self.selected_gstudents))
+        # for gs in self.selected_gstudents:
+        #     gs.remove_widget()
+        #     self.model.remove_student(gs.model)
 
     @Slot()
     def slt_open_file(self):
@@ -399,7 +400,7 @@ class GMainWindow(QMainWindow):
     
     @Slot()
     def slt_help(self):
-        help_dialog = GHelp()
+        help_dialog = GHelpDialog()
         help_dialog.show()
         help_dialog.exec()
         # TODO:
@@ -407,7 +408,7 @@ class GMainWindow(QMainWindow):
 
     @Slot()
     def slt_about(self):
-        about_dialog = GAbout()
+        about_dialog = GAboutDialog()
         about_dialog.show()
         about_dialog.exec()
         # TODO:
