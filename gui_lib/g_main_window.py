@@ -210,32 +210,9 @@ class GMainWindow(QMainWindow):
     
 
     def _setup_right_panel(self) -> None:
-        scroll = QScrollArea()
-        scroll.setMinimumWidth(200)
-        scroll.setWidgetResizable(True)
-        frame = QFrame()
-        scroll.setWidget(frame)
-        frame.setLayout(QVBoxLayout())
-        stats = self.model.get_students_per_subject()
-        # FIXME: refactor 
-        for stat in dict(sorted(stats.items(), key=lambda x: x[1], reverse=True)):
-            w_stat = QWidget()
-            w_stat.setLayout(QHBoxLayout())
-            w_stat.layout().setContentsMargins(0, 4, 5, 1)
-            w_stat.layout().setSpacing(5)
-
-            w_stat.font()
-            font = w_stat.font()
-            font.setPointSize(15)
-            w_stat.setFont(font)
-
-            w_stat.layout().addWidget(QLabel(stat), alignment=Qt.AlignmentFlag.AlignCenter)
-            w_stat.layout().addWidget(QLabel(f'{stats[stat]}'), alignment=Qt.AlignmentFlag.AlignCenter)
-            frame.layout().addWidget(w_stat)
-        frame.layout().setSpacing(1)
-        frame.layout().setContentsMargins(0, 0, 0, 0)
 
         self.main_grid_layout.addWidget(QLabel('Statistiky'), 2, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.main_grid_layout.addWidget(GSubjectTableView(self), 3, 2)
         btn = QPushButton('sort')
         btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         btn.clicked.connect(self.slt_sort)
