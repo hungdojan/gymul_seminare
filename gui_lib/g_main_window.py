@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import *
-from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent
+from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut, QStandardItemModel, QStandardItem
 from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
 import sort_lib.sort
 from gui_lib.g_student import GStudent
@@ -7,6 +7,7 @@ from gui_lib.g_day import GDay
 from gui_lib.g_constants import StudentStatus
 from gui_lib.g_about_dialog import GAboutDialog
 from gui_lib.g_help_dialog import GHelpDialog
+from gui_lib.g_subject_table_view import GSubjectTableView
 import rc
 
 class GMainWindow(QMainWindow):
@@ -18,25 +19,26 @@ class GMainWindow(QMainWindow):
     def __init__(self, model: 'sort_lib.sort.Sort', parent: QWidget=None):
         super().__init__(parent)
         self._model = model
+        self.lof_gdays = []
 
         # FIXME: TESTING PURPOSES
         self.model.load_file_subjects('./data/input_predmety.csv')
         self.model.load_file_students('./data/input_zaci-2R-anonym.csv')
-        # den1 = self.model.add_day()
-        # list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
-        # den2 = self.model.add_day()
-        # list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
-        # den3 = self.model.add_day()
-        # list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
-        # den4 = self.model.add_day()
-        # list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
+        # self.model.load_file_students('./data/nova_data.csv')
+        den1 = self.model.add_day()
+        list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
+        den2 = self.model.add_day()
+        list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
+        den3 = self.model.add_day()
+        list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
+        den4 = self.model.add_day()
+        list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
         # END TESTING
 
         self.setupUI()
         self.selected_gstudents = set()
         self.selected_gdays = set()
 
-        self.lof_gdays = []
         self.content_refreshed.connect(self.filter_students) 
         self.load_stylesheet()
 
@@ -57,6 +59,14 @@ class GMainWindow(QMainWindow):
         self._setup_student_panel()
         self._setup_day_panel()
         self._setup_right_panel()
+
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
+
+        # klavesova zkratka pro roztrideni studentu
+        sort_shortcut = QShortcut(QKeySequence('F5'), self)
+        sort_shortcut.activated.connect(self.slt_sort)
 
         self.main_grid_layout.setRowStretch(0, 0)
         self.main_grid_layout.setRowStretch(1, 3)
@@ -89,6 +99,7 @@ class GMainWindow(QMainWindow):
 
         # soubor menu
         file_menu = self.menu_bar.addMenu("Soubor")
+        add_action('Nový', self.slt_new_project, file_menu, 'Ctrl+N')
         add_action('Otevřít soubor', self.slt_open_file, file_menu, 'Ctrl+O')
         add_action('Uložit', self.slt_save, file_menu, 'Ctrl+S')
         file_menu.addSeparator()
@@ -188,6 +199,13 @@ class GMainWindow(QMainWindow):
 
         self.day_widget = QWidget()
         self.day_widget.setLayout(QVBoxLayout())
+
+        for day in self._model.days:
+            gday = GDay(day, self.days_scrollarea.widget().layout(), self)
+
+            self.filter_btn.toggled.connect(gday.filter_toggle)
+            self.lof_gdays.append(gday)
+
         self.main_grid_layout.addWidget(self.days_scrollarea, 1, 2, 1, 2)
     
 
@@ -218,7 +236,6 @@ class GMainWindow(QMainWindow):
         frame.layout().setContentsMargins(0, 0, 0, 0)
 
         self.main_grid_layout.addWidget(QLabel('Statistiky'), 2, 2, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.main_grid_layout.addWidget(scroll, 3, 2)
         btn = QPushButton('sort')
         btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         btn.clicked.connect(self.slt_sort)
@@ -237,7 +254,7 @@ class GMainWindow(QMainWindow):
         """Spravuje oznacene GStudenty
 
         Args:
-            gstudent (GStudent): Instance GStudent, ktereho se operace tyka
+            gstudent (GStudent): Instance GStudent, ktereho se Všechny operace tyka
             status (bool): Pravdivostni hodnota, zda byl objekt oznacen ci ne
         """
         if status:
@@ -250,7 +267,7 @@ class GMainWindow(QMainWindow):
         """Spravuje oznacene GDny
 
         Args:
-            gstudent (GStudent): Instance GDay, ktereho se operace tyka
+            gstudent (GStudent): Instance GDay, ktereho se Všechny operace tyka
             status (bool): Pravdivostni hodnota, zda byl objekt oznacen ci ne
         """
         if status:
@@ -274,21 +291,92 @@ class GMainWindow(QMainWindow):
     
     # slots  
     @Slot()
+    def slt_new_project(self):
+        # TODO:
+        self.selected_gdays = self.lof_gdays
+        self.selected_gstudents = self.lof_gstudents
+        self.slt_delete_days()
+        self.slt_delete_student()
+        del self._model
+        self._model = sort_lib.sort.Sort()
+        print('new project')
+
+    @Slot()
     def slt_delete_student(self) -> None:
         """Funkce maze oznacene studenty"""
-        print('delete student')
+        self.status_bar.showMessage('Mažu studenty')
         list(map(lambda x: x.delete_gstudent(), self.selected_gstudents))
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
     @Slot()
     def slt_open_file(self) -> None:
-        # TODO:
+        self.status_bar.showMessage('Otevírám soubor s uloženou prací')
+        # nacteni souboru
+        filename = QFileDialog.getOpenFileName(self, "Otevřít soubor", "", "JSON soubor (*.json)")
+        if not filename[0]:
+            self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
+            return
+        try:
+            model = sort_lib.sort.Sort.load_save_file(filename[0])
+        except sort_lib.sort.Sort.JsonFileCorruptedException:
+            # chybova hlaska pro nesetrizena data
+            self.status_bar.showMessage('Nastala chyba při otevírání souboru', 5000)
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            # FIXME: update warning text
+            msg_box.setWindowTitle('Špatná data v souboru')
+            msg_box.setText('Nelze otevřít soubor\nSoubor je buďto poškozený, nebo nesplňuje formát.')
+            msg_box.exec()
+            return
+        
+        # smazani dosavadniho model a vytvoreni noveho
+        self.selected_gdays = self.lof_gdays
+        self.selected_gstudents = self.lof_gstudents
+        self.slt_delete_days()
+        self.slt_delete_student()
+        self.lof_gdays.clear()
+        self.lof_gstudents.clear()
+
+        # pridani dat
+        self._model = model
+        self.lof_gstudents = [GStudent(student, self.student_vbox, self) 
+                              for student in self.model.students]
+        for day in self._model.days:
+            gday = GDay(day, self.days_scrollarea.widget().layout(), self)
+
+            self.filter_btn.toggled.connect(gday.filter_toggle)
+            self.lof_gdays.append(gday)
+        self.content_refreshed.emit()
+        
+        # TODO: subjects
+        
         print("open file")
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
     @Slot()
     def slt_save(self) -> None:
-        # TODO:
-        print('save')
+        self.status_bar.showMessage('Ukládám práci do souboru')
+        filename = QFileDialog.getSaveFileName(self, 'Uložit', "Bez názvu", "JSON soubor (*.json)", )
+
+        # otevreni okna pro vyber souboru
+        if not filename[0]:
+            self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
+            return
+        try:
+            content = self._model.save_to_json()
+            with open(filename[0], 'w') as f:
+                f.write(content)
+        except sort_lib.sort.Sort.DataNotSortedException:
+            # chybova hlaska pro nesetrizena data
+            self.status_bar.showMessage('Nastala chyba při exportu', 5000)
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            # FIXME: update warning text
+            msg_box.setWindowTitle('Nesetřízená data')
+            msg_box.setText('Nelze uložit práci\nPřed uložení je potřeba data setřídit')
+            msg_box.exec()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
     @Slot()
@@ -300,7 +388,9 @@ class GMainWindow(QMainWindow):
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
 
         # otevreni okna pro vyber souboru
+        self.status_bar.showMessage('Načítám soubor s předměty')
         if not dialog.exec():
+            self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
             return
         filename = dialog.selectedFiles()[0]
         try:
@@ -308,12 +398,13 @@ class GMainWindow(QMainWindow):
             self.subject_list_update.emit(new_subj)
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
+            self.status_bar.showMessage('Nastala chyba při načítání', 5000)
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('Chyba při načítání předmětů')
-            msg_box.setText('Vybraný soubor nesplňuje formát pro načtění předmětů')
+            msg_box.setWindowTitle('Chyba při načítání předmětů\nVybraný soubor nesplňuje formát pro načtění předmětů')
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
     @Slot()
@@ -324,20 +415,23 @@ class GMainWindow(QMainWindow):
         dialog.setFileMode(QFileDialog.FileMode.Directory)
 
         # otevreni okna pro vyber slozky
+        self.status_bar.showMessage('Exportuju data')
         if not dialog.exec():
+            self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
             return
         dirname = dialog.selectedFiles()[0]
         try:
             self.model.export_data(dirname)
         except sort_lib.sort.Sort.DataNotSortedException:
             # chybova hlaska pro nesetrizena data
+            self.status_bar.showMessage('Nastala chyba při exportu', 5000)
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
             # FIXME: update warning text
             msg_box.setWindowTitle('Nesetřízená data')
-            msg_box.setText('Nelze exportovat zastaralá data')
-            msg_box.setInformativeText('Před exportem je potřeba data setřídit')
+            msg_box.setText('Nelze exportovat zastaralá data\nPřed exportem je potřeba data setřídit')
             msg_box.exec()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 
     @Slot()
@@ -350,7 +444,9 @@ class GMainWindow(QMainWindow):
 
         # TODO: SUBJECT CHECK
         # otevreni okna pro vyber souboru
+        self.status_bar.showMessage('Načítám soubor se studenty')
         if not dialog.exec():
+            self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
             return
         filename = dialog.selectedFiles()[0]
         try:
@@ -359,65 +455,80 @@ class GMainWindow(QMainWindow):
             list(map(lambda x: self.lof_gstudents.append(GStudent(x, self.student_vbox, self)), new_students))
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
+            self.status_bar.showMessage('Nastala chyba při načítání', 5000)
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('Chyba při načítání studentů')
-            msg_box.setText('Vybraný soubor nesplňuje formát pro načtění studentů')
+            msg_box.setWindowTitle('Chyba při načítání studentů\nVybraný soubor nesplňuje formát pro načtění studentů')
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
     @Slot()
     def slt_close_app(self) -> None:
         """Funkce ukoncuje program"""
         # TODO: ask to save progress
+        self.status_bar.showMessage('Zavírám aplikaci')
         self.close()
     
 
     @Slot()
     def slt_add_student(self) -> None:
         # TODO:
+        self.status_bar.showMessage('Přidávám nového studenta')
         print('add student')
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
     
     @Slot()
     def slt_add_day(self) -> None:
         """Slot prida vygeneruje novy den"""
+        self.status_bar.showMessage('Přidávám novýho den')
         new_day = self.model.add_day()
         gday = GDay(new_day, self.days_scrollarea.widget().layout(), self)
 
         self.filter_btn.toggled.connect(gday.filter_toggle)
         self.lof_gdays.append(gday)
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 
     @Slot()
     def slt_delete_days(self) -> None:
         """Slot smaze vybrane dny"""
+        self.status_bar.showMessage('Mažu vybrané dny')
         list(map(lambda x: x.delete_gday(), self.selected_gdays))
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
     
     @Slot()
     def slt_help(self) -> None:
         """Slot otevre okno s napovedou"""
+        self.status_bar.showMessage('Otevírám okno s nápovědou')
         help_dialog = GHelpDialog()
         help_dialog.show()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
     @Slot()
     def slt_about(self) -> None:
         """Slot otevre okno s informacemi o aplikaci"""
+        self.status_bar.showMessage('Otevírám okno s informacemi o aplikaci')
         about_dialog = GAboutDialog()
         about_dialog.show()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
     @Slot()
     def slt_sort(self) -> None:
         """Slot provede setrizeni dat"""
+        self.status_bar.showMessage('Provádím třídění studentů')
         self.model.sort_data()
         self.content_refreshed.emit()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 
     @Slot()
     def filter_students(self) -> None:
         """Slot provadi filtraci studentu podle jejich statusu"""
+        self.status_bar.showMessage('Provádím filtraci studentů')
         # red
         red_students = list(filter(lambda x: x.get_status() == StudentStatus.NO_COMB, self.lof_gstudents))
         list(map(lambda x: x.setVisible(self.buttons['red'].isChecked()), red_students))
@@ -436,3 +547,4 @@ class GMainWindow(QMainWindow):
 
         for btn in self.buttons:
             self.buttons[btn].setText('ON' if self.buttons[btn].isChecked() else 'OFF')
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
