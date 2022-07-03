@@ -23,6 +23,8 @@ class GSubject(QFrame):
         self.setProperty('isSelected', model is not None)
 
         self.layout().addWidget(self.name_lbl, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout().addWidget(self.counter_lbl, alignment=Qt.AlignmentFlag.AlignRight)
+        self.content_update()
 
 
     @property
