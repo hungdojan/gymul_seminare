@@ -14,6 +14,7 @@ class GMainWindow(QMainWindow):
 
     content_refreshed = Signal()
     subject_list_update = Signal(list)
+    update_subject_counter = Signal()
 
 
     def __init__(self, model: 'sort_lib.sort.Sort', parent: QWidget=None):
@@ -23,16 +24,16 @@ class GMainWindow(QMainWindow):
 
         # FIXME: TESTING PURPOSES
         self.model.load_file_subjects('./data/input_predmety.csv')
-        self.model.load_file_students('./data/input_zaci-2R-anonym.csv')
-        # self.model.load_file_students('./data/nova_data.csv')
-        den1 = self.model.add_day()
-        list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
-        den2 = self.model.add_day()
-        list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
-        den3 = self.model.add_day()
-        list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
-        den4 = self.model.add_day()
-        list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
+        # self.model.load_file_students('./data/input_zaci-2R-anonym.csv')
+        # # self.model.load_file_students('./data/nova_data.csv')
+        # den1 = self.model.add_day()
+        # list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
+        # den2 = self.model.add_day()
+        # list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
+        # den3 = self.model.add_day()
+        # list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
+        # den4 = self.model.add_day()
+        # list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
         # END TESTING
 
         self.setupUI()
@@ -214,6 +215,7 @@ class GMainWindow(QMainWindow):
         self.main_grid_layout.addWidget(QLabel('Statistiky'), 2, 2, alignment=Qt.AlignmentFlag.AlignCenter)
         table_view = GSubjectTableView(self)
         self.subject_list_update.connect(table_view.update_subjects_list)
+        self.update_subject_counter.connect(table_view.update_subject_counter)
         self.main_grid_layout.addWidget(table_view, 3, 2)
         btn = QPushButton('sort')
         btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -441,6 +443,7 @@ class GMainWindow(QMainWindow):
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
+        self.update_subject_counter.emit()
 
 
     @Slot()

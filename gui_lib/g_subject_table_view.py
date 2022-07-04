@@ -25,12 +25,12 @@ class GSubjectTableView(QTableView):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         # vytvoreni modelu
-        model = QStandardItemModel()
-        model.setColumnCount(2)
-        model.setHorizontalHeaderLabels(['Předmět','Počet studentů'])
+        self.data_model = QStandardItemModel()
+        self.data_model.setColumnCount(2)
+        self.data_model.setHorizontalHeaderLabels(['Předmět','Počet studentů'])
 
         proxy_model = GSubjectTableView.ProxyModel()
-        proxy_model.setSourceModel(model)
+        proxy_model.setSourceModel(self.data_model)
         
         # prida data
         stats = self._base_gparent.model.get_students_per_subject()
@@ -39,7 +39,7 @@ class GSubjectTableView(QTableView):
             name.setTextAlignment(Qt.AlignCenter)
             counter = QStandardItem(str(stats[i]))
             counter.setTextAlignment(Qt.AlignCenter)
-            model.appendRow([name, counter])
+            self.data_model.appendRow([name, counter])
         
         
         # nastaveni tabulky (read-only)
@@ -59,13 +59,13 @@ class GSubjectTableView(QTableView):
 
     def clear_data(self):
         # smaze vsechna data z modelu
-        self.model().removeRows(0, self.model().rowCount() - 1)
+        self.data_model.removeRows(0, self.data_model().rowCount() - 1)
     
 
     def get_names(self) -> list:
         return list(map(
-            lambda i: self.model().data(self.model().index(i, 0, QModelIndex())),
-            range(self.model().rowCount())
+            lambda i: self.data_model.data(self.data_model().index(i, 0, QModelIndex())),
+            range(self.data_model.rowCount())
         ))
 
 
@@ -78,12 +78,13 @@ class GSubjectTableView(QTableView):
         for subj in new_subjects:
             if subj in current_names:
                 row_index = self.get_names().index(subj)
-                self.model().removeRow(row_index)
+                self.data_model.removeRow(row_index)
             else:
                 name = QStandardItem(subj)
                 name.setTextAlignment(Qt.AlignCenter)
-                value = QStandardItem(str(stats[name]))
+                value = QStandardItem(str(stats[subj]))
                 value.setTextAlignment(Qt.AlignCenter)
+                self.data_model.appendRow([name, value])
 
 
     @Slot()
@@ -91,7 +92,7 @@ class GSubjectTableView(QTableView):
         """Aktualizuje model o pocet studentu"""
 
         stats = self._base_gparent.model.get_students_per_subject()
-        for i in range(self.model().rowCount()):
-            name = self.model().data(self.model().index(i, 0, QModelIndex()))
-            value_model = self.model().index(i, 1, QModelIndex())
-            self.model().setData(value_model, stats[name])
+        for i in range(self.data_model.rowCount()):
+            name = self.data_model.data(self.data_model.index(i, 0, QModelIndex()))
+            value_model = self.data_model.index(i, 1, QModelIndex())
+            self.data_model.setData(value_model, str(stats[name]))
