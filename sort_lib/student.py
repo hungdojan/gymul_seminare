@@ -16,7 +16,7 @@ class Student:
         # Trida studenta
         self.__class_id     = class_id
         # Seznam vybranych predmetu
-        self.__lof_subjects = lof_subjects
+        self.__lof_subjects = tuple(map(lambda x: x if x else None, lof_subjects))
 
         # Seznam vsech moznych kombinaci predmetu,
         # ktery si student muze zapsat

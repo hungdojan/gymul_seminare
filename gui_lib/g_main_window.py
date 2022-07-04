@@ -212,7 +212,9 @@ class GMainWindow(QMainWindow):
     def _setup_right_panel(self) -> None:
 
         self.main_grid_layout.addWidget(QLabel('Statistiky'), 2, 2, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.main_grid_layout.addWidget(GSubjectTableView(self), 3, 2)
+        table_view = GSubjectTableView(self)
+        self.subject_list_update.connect(table_view.update_subjects_list)
+        self.main_grid_layout.addWidget(table_view, 3, 2)
         btn = QPushButton('sort')
         btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         btn.clicked.connect(self.slt_sort)
