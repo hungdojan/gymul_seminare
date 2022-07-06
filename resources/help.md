@@ -36,4 +36,13 @@ Odstranění dnu je přímočaré. Po kliknutí na widget dnu (mimo tlačítka p
 ![selected days](:/selected_day.png)
 
 ## Práce se studentem
-Studentovi se dá nastavit mnoho věcí. Po kliknutí levým tlačítkem myši na 
+Studenti jsou odlišeni barvami (červená, žlutá, zelená, modrá) podle toho, jak úspěšně byli přiřazeni do jednotlivých dnů. Červení studetni mají smůlu, pro ně se nenašla žádná kombinace. Zelení studenti mají jasno, jenom jedna kombinace byla nalezena a proto jim byla automaticky i přidelěna. Žlutí studenti mají tu výhodu, že se mohou vybrat, jak si jednotlivé předměty poskládají. Modří studenti narozdíl od žlutých mají již vybranou kombinaci.
+
+Kliknutím levým tlačítkem myši na studenta může uživatel vybrat, v jaké dny bude student jednotlivé předměty navstěvovat. Otevře se okno, ve kterém vybere kombinaci a dá uložit.
+
+Studentovi může uživatel upravit data, zamknout ho nebo smazat. Všechny akce se dají provést přes kontextové menu. Stačí na příslušného studenta kliknout pravým tlačítkem.
+
+![context_menu](:/context_menu.png)
+
+## Filtrace studentů
+Studenti se dají filtrovat podle toho, v jakém jsou momentálně stavu. Pokud je tlačítko v pozici **ON**, tak to znamená, že studenti dané barvy jsou zobrazeni. V opačném případě (tlačítko je ve stavu **OFF**) jsou studenti dané barvy ignorováni.
