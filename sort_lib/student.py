@@ -6,7 +6,7 @@ class Student:
     class StudentLockedException(Exception):
         pass
 
-    def __init__(self, id: str, first_name: str, last_name: str, class_id: str, lof_subjects: tuple):
+    def __init__(self, id: str, first_name: str, last_name: str, class_id: str, required_subjects: tuple, parent: 'sort_lib.sort.Sort'):
         # Identifikacni cislo studenta
         self.__id = id
         # Jmeno studenta
@@ -16,7 +16,9 @@ class Student:
         # Trida studenta
         self.__class_id     = class_id
         # Seznam vybranych predmetu
-        self.__lof_subjects = tuple(map(lambda x: x if x else None, lof_subjects))
+        self.__required_subjects = tuple(map(lambda x: x if x else None, required_subjects))
+        # Hlavni rodic
+        self.__parent = parent
 
         # Seznam vsech moznych kombinaci predmetu,
         # ktery si student muze zapsat
@@ -58,7 +60,8 @@ class Student:
     @property
     def chosen_comb(self) -> tuple:
         if self.__chosen_comb is not None:
-            out_tuple = tuple(map(lambda y: y[0], self.__chosen_comb))
+            # out_tuple = tuple(map(lambda y: y[0], self.__chosen_comb))
+            out_tuple = tuple([subj[0] for subj in self.__chosen_comb])
         else:
             out_tuple = None
         return out_tuple
@@ -66,12 +69,13 @@ class Student:
     @property
     def possible_comb(self) -> list:
         # vraci list nazvu kombinaci
-        out_list = list(map(lambda x: tuple(map(lambda y: y[0], x)), self.__possible_comb))
+        # out_list = list(map(lambda x: tuple(map(lambda y: y[0], x)), self.__possible_comb))
+        out_list = [tuple([subj[0] for subj in comb]) for comb in self.__possible_comb]
         return out_list
 
     @property
-    def lof_subjects(self) -> tuple:
-        return self.__lof_subjects
+    def required_subjects(self) -> tuple:
+        return self.__required_subjects
 
     @property
     def is_locked(self) -> bool:
@@ -95,13 +99,22 @@ class Student:
         if not self._is_locked or len(value) == 0 or self.__chosen_comb not in value:
             self._is_locked = False
             self.__update_combination(None)
+            self.__parent.set_sorted(False)
         self.__possible_comb = value
+    
 
-    @lof_subjects.setter
-    def lof_subjects(self, value: set):
+    def set_required_subjects(self, value: tuple) -> tuple:
         if self._is_locked:
             raise Student.StudentLockedException("Cannot edit locked student's data")
-        self.__lof_subjects = value
+        self.__update_combination(None)
+        self.__possible_comb = []
+        changes = []
+        for i in range(len(value)):
+            if value[i] != self.__required_subjects[i]:
+                changes.append((self.__required_subjects[i], value[i]))
+        self.__required_subjects = value
+        self.__parent.set_sorted(False)
+        return changes
     
 
     def set_comb(self, index: int) -> None:
@@ -166,8 +179,8 @@ class Student:
         obj['first_name'] = self.__first_name
         obj['last_name'] = self.__last_name
         obj['class_id'] = self.__class_id
-        obj['lof_subjects'] = QJsonArray()
-        list(map(lambda x: obj['lof_subjects'].push_back(x), self.__lof_subjects))
+        obj['required_subjects'] = QJsonArray()
+        list(map(lambda x: obj['required_subjects'].push_back(x), self.__required_subjects))
         obj['possible_comb'] = QJsonArray()
         for comb in self.possible_comb:
             arr = QJsonArray()

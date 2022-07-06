@@ -6,10 +6,10 @@ from sort_lib.constants import (FILE_TYPE, FILE_DELIM, EOF, FILE_STUDENT_FORMAT_
                                 FILE_SUBJECT_FORMAT_REGEX, OUT_DAYS, OUT_STUDENTS)
 from sort_lib.student import Student
 from sort_lib.day import Day
-from PySide6.QtCore import QJsonArray, QJsonDocument, QFile, QIODevice
+from PySide6.QtCore import QJsonArray, QJsonDocument, QFile, QIODevice, Signal, QObject
 
 
-class Sort:
+class Sort(QObject):
     class FilePathException(Exception):
         pass
 
@@ -25,7 +25,10 @@ class Sort:
     class JsonFileCorruptedException(Exception):
         pass
 
+    sort_toggle = Signal(bool)
+
     def __init__(self):
+        super().__init__()
         # Seznam studentu
         self.__students = []
         # Seznam dnu
@@ -53,6 +56,11 @@ class Sort:
     @property
     def is_sorted(self):
         return self._is_sorted
+    
+
+    def set_sorted(self, value):
+        self._is_sorted = value
+        self.sort_toggle.emit(value)
 
 
     def add_day(self) -> Day:
@@ -61,9 +69,9 @@ class Sort:
         Returns:
             Day: Instance nove vytvoreneho dne
         """
-        day = Day()
+        day = Day(self)
         self.__days.append(day)
-        self._is_sorted = False
+        self.set_sorted(False)
         return day
     
 
@@ -78,7 +86,7 @@ class Sort:
         if index in range(len(self.days)):
             self.__days[index].clear_data()
             del self.__days[index]
-            self._is_sorted = False
+            self.set_sorted(False)
 
 
     def add_subject(self, name: str):
@@ -89,8 +97,8 @@ class Sort:
         """
         if name is None:
             return
-        self.__subjects.add(name)
-        self._is_sorted = False
+        self.__subjects.add(name, self)
+        self.set_sorted(False)
     
 
     def remove_subject(self, name: str) -> None:
@@ -101,7 +109,7 @@ class Sort:
         """
         if name not in self.__subjects:
             return
-        self._is_sorted = False
+        self.set_sorted(False)
         list(map(lambda x: x.remove_subject(name), self.__days))
         self.__subjects.discard(name)
     
@@ -120,10 +128,10 @@ class Sort:
         """
         if student is None:
             return False
-        if len(list(filter(lambda x: x.id == student.id, self.__students))) > 0:
+        if len([s for s in self.__students if s.id == student.id]) > 0:
             return False
         self.__students.append(student)
-        self._is_sorted = False
+        self.set_sorted(False)
         return True
 
 
@@ -136,7 +144,7 @@ class Sort:
         found_students = list(filter(lambda x: x.id == student_id, self.__students))
         if len(found_students) < 1:
             return
-        self._is_sorted = False
+        self.set_sorted(False)
         found_students[0].clear_data()
         self.__students = list(filter(lambda x: x.id != student_id, self.__students))
 
@@ -149,7 +157,7 @@ class Sort:
         """
         d = {}
         for subj in self.__subjects:
-            d[subj] = len(list(filter(lambda x: subj in x.lof_subjects, self.__students)))
+            d[subj] = len(list(filter(lambda x: subj in x.required_subjects, self.__students)))
         return d
 
 
@@ -178,7 +186,7 @@ class Sort:
         
         # nacitani dat ze souboru
         line_num = 0
-        self._is_sorted = False
+        self.set_sorted(False)
         with codecs.open(path, encoding='utf-8') as f:
             for line in f:
                 line_num += 1
@@ -196,7 +204,7 @@ class Sort:
                 
                 # vlozi noveho studenta do seznamu studentu
                 self.__students.append(Student(
-                    data[0], data[1], data[2], data[3], tuple(data[4-len(data):])
+                    data[0], data[1], data[2], data[3], tuple(data[4-len(data):]), self
                 ))
                 new_students_id.append(data[0])
         
@@ -228,7 +236,7 @@ class Sort:
         
         # nacitani dat ze souboru
         line_num = 0
-        self._is_sorted = False
+        self.set_sorted(False)
         with codecs.open(path, encoding='utf-8') as f:
             for line in f:
                 line_num += 1
@@ -267,13 +275,13 @@ class Sort:
                 if i not in comb:
                     out.append((None, None))
                 else:
-                    out.append((student.lof_subjects[comb.index(i)], self.__days[i]))
+                    out.append((student.required_subjects[comb.index(i)], self.__days[i]))
             return tuple(out)
 
         for s in self.__students:
             comb = []
             # Pro kazdy predmet zjisti, do jakeho dne by mohl byt zarazen
-            for sub in s.lof_subjects:
+            for sub in s.required_subjects:
                 list_of_possible_days = list(filter(lambda x: sub in list(map(lambda y: y.name, x.subjects)), self.__days))
                 possible_days_indices = list(map(lambda x: self.__days.index(x), list_of_possible_days))
                 comb.append(possible_days_indices)
@@ -293,7 +301,7 @@ class Sort:
                     s.set_comb(0)
                 except:
                     pass
-        self._is_sorted = True
+        self.set_sorted(True)
 
 
     def export_data(self, dest_path: str):
@@ -370,7 +378,7 @@ class Sort:
         self.__students.clear()
         self.__days.clear()
         self.__subjects.clear()
-        self._is_sorted = False
+        self.set_sorted(False)
 
 
     @staticmethod
@@ -425,7 +433,8 @@ class Sort:
                     student_json['first_name'],
                     student_json['last_name'],
                     student_json['class_id'],
-                    tuple(student_json['lof_subjects'])
+                    tuple(student_json['required_subjects']),
+                    model
                 )
             )
         
@@ -441,6 +450,6 @@ class Sort:
                 student.set_comb(student.possible_comb.index(tuple(comb)))
             student._is_locked = student_json['is_locked']
         
-        model._is_sorted = True
+        model.set_sorted(True)
 
         return model

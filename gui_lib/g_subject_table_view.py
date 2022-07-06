@@ -64,7 +64,7 @@ class GSubjectTableView(QTableView):
 
     def get_names(self) -> list:
         return list(map(
-            lambda i: self.data_model.data(self.data_model().index(i, 0, QModelIndex())),
+            lambda i: self.data_model.data(self.data_model.index(i, 0, QModelIndex())),
             range(self.data_model.rowCount())
         ))
 

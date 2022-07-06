@@ -12,6 +12,7 @@ class GStudent(QWidget):
 
     locked_triggered = Signal()
     update_style_triggered = Signal()
+    update_required_subjects = Signal()
 
     def __init__(self, model: Student, base_layout: QBoxLayout, base_gparent: 'gui_lib.g_main_window.GMainWindow'):
         super().__init__()
@@ -73,7 +74,7 @@ class GStudent(QWidget):
 
         # ComboBoxy jednotlivych predmetu
         self.subjects_cb = []
-        for i in self._model.lof_subjects:
+        for i in self._model.required_subjects:
             cb = GComboBox()
             cb.addItems(self._base_gparent.model.subjects)
             index = cb.findText(i)
@@ -230,7 +231,7 @@ class GStudent(QWidget):
 
     @Slot(int)
     def update_subjects(self, index: int):
-        cb: GComboBox = self.sender()
-        sender_index = self.subjects_cb.index(cb)
-        print(sender_index)
-        # TODO:
+        current_comb = tuple([cb.currentText() for cb in self.subjects_cb])
+        self._model.set_required_subjects(current_comb)
+        self._base_gparent.content_refreshed.emit()
+        self.update_required_subjects.emit()

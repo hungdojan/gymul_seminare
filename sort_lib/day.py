@@ -1,11 +1,13 @@
 import sort_lib.subject
+import sort_lib.sort
 from PySide6.QtCore import QJsonArray
 
 class Day:
 
-    def __init__(self):
+    def __init__(self, parent: 'sort_lib.sort.Sort'):
         # Seznam predmetu v danem dni
         self.__subjects = []
+        self.__parent = parent
     
 
     @property
@@ -20,7 +22,7 @@ class Day:
     
 
     def get_subject(self, subject_name: str) -> sort_lib.subject.Subject:
-        temp = list(filter(lambda x: x.name == subject_name, self.__subjects))
+        temp = [subject for subject in self.__subjects if subject.name == subject_name]
         return temp[0] if len(temp) > 0 else None
     
 
@@ -33,9 +35,10 @@ class Day:
         Returns:
             bool: Pravdivostni hodnota urcujici, zda se predmet podaril vlozit
         """
-        if len(list(filter(lambda x: x.name == subject.name, self.__subjects))) > 0:
+        if len([subj for subj in self.__subjects if subj.name == subject.name]) > 0:
             return False
         self.__subjects.append(subject)
+        self.__parent.set_sorted(False)
         return True
     
 
@@ -51,11 +54,12 @@ class Day:
         Returns:
             sort_lib.subject.Subject: Nalezena, nebo vytvorena instance predmetu
         """
-        subject = list(filter(lambda x: x.name == subject_name, self.__subjects))
+        subject = [subject for subject in self.__subjects if subject.name == subject_name]
         if len(subject) > 0:
             return subject[0]
         subject = sort_lib.subject.Subject(subject_name)
         self.__subjects.append(subject)
+        self.__parent.set_sorted(False)
         return subject
     
 
@@ -65,16 +69,18 @@ class Day:
         Args:
             subject_name (str): Jmeno predmetu
         """
-        delete_subj = list(filter(lambda x: x.name == subject_name, self.__subjects))
+        delete_subj = [subject for subject in self.__subjects if subject.name == subject_name]
         if len(delete_subj) > 0:
             delete_subj[0].clear_data()
-        self.__subjects = list(filter(lambda x: x.name != subject_name, self.__subjects))
+        self.__subjects = [subject for subject in self.__subjects if subject.name != subject_name]
+        self.__parent.set_sorted(False)
     
 
     def clear_data(self):
         """Vymaze vsechny predmety v danem dni"""
         list(map(lambda x: x.clear_data(), self.__subjects))
         self.__subjects.clear()
+        self.__parent.set_sorted(False)
 
     
     def get_qjson(self) -> dict:
@@ -92,4 +98,4 @@ class Day:
 
     def clear_subjects(self):
         """Vymaze vsechna data ulozene v jednotlivych predmetech"""
-        self.__subjects = list(map(lambda x: x.clear_data(), self.__subjects))
+        list(map(lambda x: x.clear_data(), self.__subjects))

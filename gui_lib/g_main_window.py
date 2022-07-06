@@ -8,6 +8,7 @@ from gui_lib.g_constants import StudentStatus
 from gui_lib.g_about_dialog import GAboutDialog
 from gui_lib.g_help_dialog import GHelpDialog
 from gui_lib.g_subject_table_view import GSubjectTableView
+from gui_lib.g_sort_button import GSortButton
 import rc
 
 class GMainWindow(QMainWindow):
@@ -21,20 +22,7 @@ class GMainWindow(QMainWindow):
         super().__init__(parent)
         self._model = model
         self.lof_gdays = []
-
-        # FIXME: TESTING PURPOSES
-        self.model.load_file_subjects('./data/input_predmety.csv')
-        # self.model.load_file_students('./data/input_zaci-2R-anonym.csv')
-        # # self.model.load_file_students('./data/nova_data.csv')
-        # den1 = self.model.add_day()
-        # list(map(lambda x: den1.add_subject_name(x), ['Aj-FCE', 'Bi', 'Pr']))
-        # den2 = self.model.add_day()
-        # list(map(lambda x: den2.add_subject_name(x), ['Aj-FCE', 'Nj-DSD2', 'ZSV', 'Fy', 'Nj-DSD1']))
-        # den3 = self.model.add_day()
-        # list(map(lambda x: den3.add_subject_name(x), ['Aj-FCE', 'Aj-Konv', 'M-MZ', 'M-VS', 'ZSV']))
-        # den4 = self.model.add_day()
-        # list(map(lambda x: den4.add_subject_name(x), ['Ch', 'D', 'VV', 'Z']))
-        # END TESTING
+        self.lof_gstudents = []
 
         self.setupUI()
         self.selected_gstudents = set()
@@ -57,9 +45,9 @@ class GMainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
         self._setup_menu_bar()
+        self._setup_right_panel()
         self._setup_student_panel()
         self._setup_day_panel()
-        self._setup_right_panel()
 
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
@@ -115,9 +103,10 @@ class GMainWindow(QMainWindow):
         add_action('Zavřít', self.close, file_menu, 'Alt+F4')
 
         # student menu
-        edit_menu = self.menu_bar.addMenu('Upravit')
-        add_action('Přidat studenta', self.slt_add_student, edit_menu)
-        add_action('Smazat studenta', self.slt_delete_student, edit_menu)
+        # TODO:
+        # edit_menu = self.menu_bar.addMenu('Upravit')
+        # add_action('Přidat studenta', self.slt_add_student, edit_menu)
+        # add_action('Smazat studenta', self.slt_delete_student, edit_menu)
         # edit_menu.addSeparator()
 
         view_menu = self.menu_bar.addMenu('Zobrazit')
@@ -172,8 +161,10 @@ class GMainWindow(QMainWindow):
         self.main_grid_layout.addWidget(w, 0, 1)
 
         # zobrazeni dat
-        self.lof_gstudents = [GStudent(student, self.student_vbox, self) 
-                              for student in self.model.students]
+        for student in self._model.students:
+            gstudent = GStudent(student, self.student_vbox, self)
+            gstudent.update_required_subjects.connect(self.table_view.update_subject_counter)
+            self.lof_gstudents.append(gstudent)
     
 
     def _setup_day_panel(self) -> None:
@@ -213,14 +204,15 @@ class GMainWindow(QMainWindow):
     def _setup_right_panel(self) -> None:
 
         self.main_grid_layout.addWidget(QLabel('Statistiky'), 2, 2, alignment=Qt.AlignmentFlag.AlignCenter)
-        table_view = GSubjectTableView(self)
-        self.subject_list_update.connect(table_view.update_subjects_list)
-        self.update_subject_counter.connect(table_view.update_subject_counter)
-        self.main_grid_layout.addWidget(table_view, 3, 2)
-        btn = QPushButton('sort')
-        btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        btn.clicked.connect(self.slt_sort)
-        self.main_grid_layout.addWidget(btn, 3, 3)
+        self.table_view = GSubjectTableView(self)
+        self.subject_list_update.connect(self.table_view.update_subjects_list)
+        self.update_subject_counter.connect(self.table_view.update_subject_counter)
+        self.main_grid_layout.addWidget(self.table_view, 3, 2)
+        self.sort_button = GSortButton('sort')
+        self._model.sort_toggle.connect(self.sort_button.sort_button_update)
+        self.sort_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.sort_button.clicked.connect(self.slt_sort)
+        self.main_grid_layout.addWidget(self.sort_button, 3, 3)
 
     
     def load_stylesheet(self) -> None:
@@ -280,7 +272,6 @@ class GMainWindow(QMainWindow):
         self.slt_delete_student()
         del self._model
         self._model = sort_lib.sort.Sort()
-        print('new project')
 
     @Slot()
     def slt_delete_student(self) -> None:
@@ -331,7 +322,6 @@ class GMainWindow(QMainWindow):
         
         # TODO: subjects
         
-        print("open file")
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
@@ -382,7 +372,8 @@ class GMainWindow(QMainWindow):
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('Chyba při načítání předmětů\nVybraný soubor nesplňuje formát pro načtění předmětů')
+            msg_box.setWindowTitle('Chyba při načítání předmětů')
+            msg_box.setText('Vybraný soubor nesplňuje formát pro načtění předmětů')
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
@@ -432,8 +423,11 @@ class GMainWindow(QMainWindow):
         filename = dialog.selectedFiles()[0]
         try:
             new_ids = self.model.load_file_students(filename)
-            new_students = list(filter(lambda x: x.id in new_ids, self.model.students))
-            list(map(lambda x: self.lof_gstudents.append(GStudent(x, self.student_vbox, self)), new_students))
+            new_students = [student for student in self.model.students if student.id in new_ids]
+            for student in new_students:
+                gstudent = GStudent(student, self.student_vbox, self)
+                gstudent.update_required_subjects.connect(self.table_view.update_subject_counter)
+                self.lof_gstudents.append(gstudent)
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
