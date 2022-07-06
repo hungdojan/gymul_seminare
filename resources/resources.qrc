@@ -4,7 +4,6 @@
     <file>font-awesome-brands.otf</file>
     <file>font-awesome-regular.otf</file>
     <file>font-awesome-solid.otf</file>
-    <file>help.html</file>
     <file>help.md</file>
 
     <file alias="layout.jpg">screenshots/layout.jpg</file>
