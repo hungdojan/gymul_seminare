@@ -266,10 +266,11 @@ class GMainWindow(QMainWindow):
     @Slot()
     def slt_new_project(self):
         # TODO:
-        self.selected_gdays = self.lof_gdays
-        self.selected_gstudents = self.lof_gstudents
+        self.selected_gdays = set(self.lof_gdays)
+        self.selected_gstudents = set(self.lof_gstudents)
         self.slt_delete_days()
         self.slt_delete_student()
+        self.subject_list_update.emit(self._model.subjects)
         del self._model
         self._model = sort_lib.sort.Sort()
 
@@ -302,12 +303,13 @@ class GMainWindow(QMainWindow):
             return
         
         # smazani dosavadniho model a vytvoreni noveho
-        self.selected_gdays = self.lof_gdays
-        self.selected_gstudents = self.lof_gstudents
+        self.selected_gdays = set(self.lof_gdays)
+        self.selected_gstudents = set(self.lof_gstudents)
         self.slt_delete_days()
         self.slt_delete_student()
         self.lof_gdays.clear()
         self.lof_gstudents.clear()
+        self.subject_list_update.emit(self._model.subjects)
 
         # pridani dat
         self._model = model
@@ -319,7 +321,8 @@ class GMainWindow(QMainWindow):
             self.filter_btn.toggled.connect(gday.filter_toggle)
             self.lof_gdays.append(gday)
         self.content_refreshed.emit()
-        
+        self.subject_list_update.emit(self._model.subjects)
+        self.sort_button.sort_button_update(True)
         # TODO: subjects
         
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
@@ -480,16 +483,14 @@ class GMainWindow(QMainWindow):
     def slt_help(self) -> None:
         """Slot otevre okno s napovedou"""
         self.status_bar.showMessage('Otevírám okno s nápovědou')
-        help_dialog = GHelpDialog()
-        help_dialog.show()
+        GHelpDialog(self)
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
     @Slot()
     def slt_about(self) -> None:
         """Slot otevre okno s informacemi o aplikaci"""
         self.status_bar.showMessage('Otevírám okno s informacemi o aplikaci')
-        about_dialog = GAboutDialog()
-        about_dialog.show()
+        GAboutDialog(self)
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
     @Slot()

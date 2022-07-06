@@ -4,5 +4,13 @@
     <file>font-awesome-brands.otf</file>
     <file>font-awesome-regular.otf</file>
     <file>font-awesome-solid.otf</file>
+    <file>help.html</file>
+    <file>help.md</file>
+
+    <file alias="layout.jpg">screenshots/layout.jpg</file>
+    <file alias="layout.png">screenshots/layout.png</file>
+    <file alias="unfilter_days.png">screenshots/unfilter_days.png</file>
+    <file alias="filtered_days.png">screenshots/filtered_days.png</file>
+    <file alias="selected_day.png">screenshots/selected_day.png</file>
 </qresource>
 </RCC>
