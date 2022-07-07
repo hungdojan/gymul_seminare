@@ -22,7 +22,7 @@ class GStudent(QWidget):
         # propojeni signalu a slotu
         self._base_gparent.subject_list_update.connect(self.update_lof_items)
         self.update_style_triggered.connect(self.update_style)
-        self._base_gparent.content_refreshed.connect(self.update_content)
+        self._base_gparent.data_updated.connect(self.update_content)
         self.customContextMenuRequested.connect(self.show_context_menu)
 
         # nastaveni studentova widgetu
@@ -186,6 +186,7 @@ class GStudent(QWidget):
 
         # zamyka studenta pred upravou
         lock_action = context_menu.addAction('Zamknout')
+        lock_action.setEnabled(self._model.chosen_comb is not None)
         lock_action.setCheckable(True)
         lock_action.setChecked(self.model.is_locked)
         lock_action.triggered.connect(self.lock_trigger)
@@ -233,5 +234,5 @@ class GStudent(QWidget):
     def update_subjects(self, index: int):
         current_comb = tuple([cb.currentText() for cb in self.subjects_cb])
         self._model.set_required_subjects(current_comb)
-        self._base_gparent.content_refreshed.emit()
+        self._base_gparent.view_updated.emit()
         self.update_required_subjects.emit()

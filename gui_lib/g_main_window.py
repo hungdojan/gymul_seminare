@@ -13,7 +13,8 @@ import rc
 
 class GMainWindow(QMainWindow):
 
-    content_refreshed = Signal()
+    view_updated = Signal()
+    data_updated = Signal()
     subject_list_update = Signal(list)
     update_subject_counter = Signal()
 
@@ -28,7 +29,9 @@ class GMainWindow(QMainWindow):
         self.selected_gstudents = set()
         self.selected_gdays = set()
 
-        self.content_refreshed.connect(self.filter_students) 
+        # self.data_updated.connect(self.filter_students) 
+        self.view_updated.connect(self.view_update)
+        self.update
         self.load_stylesheet()
 
     @property
@@ -320,7 +323,7 @@ class GMainWindow(QMainWindow):
 
             self.filter_btn.toggled.connect(gday.filter_toggle)
             self.lof_gdays.append(gday)
-        self.content_refreshed.emit()
+        self.view_updated.emit()
         self.subject_list_update.emit(self._model.subjects)
         self.sort_button.sort_button_update(True)
         # TODO: subjects
@@ -498,8 +501,16 @@ class GMainWindow(QMainWindow):
         """Slot provede setrizeni dat"""
         self.status_bar.showMessage('Provádím třídění studentů')
         self.model.sort_data()
-        self.content_refreshed.emit()
+        for student in self.lof_gstudents:
+            student.update_content()
+        self.view_updated.emit()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
+    
+
+    @Slot()
+    def view_update(self):
+        self.data_updated.emit()
+        self.filter_students()
     
 
     @Slot()

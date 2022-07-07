@@ -3,8 +3,7 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [
-        {
+    "configurations": [{
             "name": "Launch App",
             "type": "python",
             "request": "launch",
@@ -12,15 +11,15 @@
             "justMyCode": true,
             "windows": {
                 "preLaunchTask": "compile QRC for Windows",
-                "program": "${workspaceFolder}\\main.py",
+                "program": "${workspaceFolder}\\gui_lib\\__main__.py",
             },
             "linux": {
                 "preLaunchTask": "compile QRC for Linux",
-                "program": "${workspaceFolder}/main.py"
+                "program": "${workspaceFolder}/gui_lib/__main__.py"
             },
             "env": {
                 "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
             }
         }
     ]
-}
+    }

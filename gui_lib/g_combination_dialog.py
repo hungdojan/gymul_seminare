@@ -44,5 +44,5 @@ class GCombinationDialog(QDialog):
         """Akce po uspesnem ukonceni dialogoveho okna"""
         # aktualizace kombinace a vyvolani signalu k aktualizaci
         self.gstudent.model.set_comb(self.subjs.currentIndex() - 1)
-        self.gstudent.base_gparent.content_refreshed.emit()
+        self.gstudent.base_gparent.view_updated.emit()
         super().accept()
