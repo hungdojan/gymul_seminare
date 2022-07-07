@@ -2,6 +2,7 @@ import sort_lib.student
 from PySide6.QtCore import QJsonArray
 
 class Subject:
+    """Trida reprezentujici predmet"""
     
     def __init__(self, name: str):
         # jmeno predmetu
@@ -17,7 +18,7 @@ class Subject:
     
     @property
     def students(self) -> tuple:
-        """Vraci seznam zaku zapsany v danem predmetu
+        """Vraci seznam zaku zapsany v danem predmetu.
 
         Returns:
             tuple: Nemodifikovatelny seznam zaku v predmetu
@@ -26,7 +27,7 @@ class Subject:
     
 
     def add_student(self, student: 'sort_lib.student.Student'):
-        """Zapisuje studenta do predmetu
+        """Zapisuje studenta do predmetu.
 
         Args:
             student (sort_lib.student.Student): Instance studenta
@@ -35,7 +36,7 @@ class Subject:
 
     
     def remove_student(self, student: 'sort_lib.student.Student'):
-        """Maze studenta ze seznamu zapsanych studentu predmetu
+        """Maze studenta ze seznamu zapsanych studentu predmetu.
 
         Args:
             student (sort_lib.student.Student): Instance studenta
@@ -47,7 +48,7 @@ class Subject:
 
 
     def student_count(self) -> int:
-        """Vraci pocet zaku v tomto predmetu
+        """Vraci pocet zaku v tomto predmetu.
 
         Returns:
             int: Pocet zaku v predmetu
@@ -56,12 +57,12 @@ class Subject:
     
 
     def clear_data(self) -> None:
-        """Vymaze seznam studentu zapsanych v danem predmetu"""
+        """Vymaze seznam studentu zapsanych v danem predmetu."""
         list(map(lambda x: x.clear_data(), reversed(self.__students)))
 
     
     def get_qjson(self) -> dict:
-        """Vygeneruje JSON objekt pro ulozeni backendu
+        """Vygeneruje JSON objekt pro ulozeni backendu.
 
         Returns:
             dict: Vygenerovany JSON objekt

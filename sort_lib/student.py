@@ -2,11 +2,17 @@ import sort_lib.sort
 from PySide6.QtCore import QJsonArray
 
 class Student:
+    """Trida reprezentujici studenta"""
 
     class StudentLockedException(Exception):
+        """Vyjimka uzamceneho studenta
+
+        Tato vyjimka se vyvola tehdy, kdyz se uzivatel pokousi upravit predmety zamkleho studenta.
+        """
         pass
 
-    def __init__(self, id: str, first_name: str, last_name: str, class_id: str, required_subjects: tuple, parent: 'sort_lib.sort.Sort'):
+    def __init__(self, id: str, first_name: str, last_name: str, class_id: str,
+                 required_subjects: tuple, parent: 'sort_lib.sort.Sort'):
         # Identifikacni cislo studenta
         self.__id = id
         # Jmeno studenta
@@ -60,7 +66,6 @@ class Student:
     @property
     def chosen_comb(self) -> tuple:
         if self.__chosen_comb is not None:
-            # out_tuple = tuple(map(lambda y: y[0], self.__chosen_comb))
             out_tuple = tuple([subj[0] for subj in self.__chosen_comb])
         else:
             out_tuple = None
@@ -69,7 +74,6 @@ class Student:
     @property
     def possible_comb(self) -> list:
         # vraci list nazvu kombinaci
-        # out_list = list(map(lambda x: tuple(map(lambda y: y[0], x)), self.__possible_comb))
         out_list = [tuple([subj[0] for subj in comb]) for comb in self.__possible_comb]
         return out_list
 
@@ -103,31 +107,37 @@ class Student:
         self.__possible_comb = value
     
 
-    def set_required_subjects(self, value: tuple) -> tuple:
+    @required_subjects.setter
+    def required_subjects(self, value: tuple):
+        """Aktualizuje seznam pozadovanych predmetu.
+        
+        Seznam nelze aktualizovat, pokud je student uzamcen.
+
+        Args:
+            value (tuple): Novy seznam pozadovanych predmetu.
+
+        Raises:
+            Student.StudentLockedException: Student je uzamcen, nelze upravovat data.
+        """
         if self._is_locked:
             raise Student.StudentLockedException("Cannot edit locked student's data")
         self.__update_combination(None)
         self.__possible_comb = []
-        changes = []
-        for i in range(len(value)):
-            if value[i] != self.__required_subjects[i]:
-                changes.append((self.__required_subjects[i], value[i]))
         self.__required_subjects = value
         self.__parent.set_sorted(False)
-        return changes
     
 
     def set_comb(self, index: int) -> None:
-        """Nastavi studentovi kombinaci ze seznamu moznych kombinaci
+        """Nastavi studentovi kombinaci ze seznamu moznych kombinaci.
 
         Kombinace se vybira podle zadaneho indexu. V pripade, ze uzivatel zada
         index mimo dosah seznamu, bude studentovi nastavena hodnota None.
 
         Args:
-            index (int): Pozice kombinace v Student.possible_comb
+            index (int): Pozice kombinace v Student.possible_comb.
 
         Raises:
-            Student.StudentLockedException: Student je zamknut; opravneni upravovat je odepreno
+            Student.StudentLockedException: Student je zamknut; opravneni upravovat je odepreno.
         """
         if self._is_locked:
             raise Student.StudentLockedException("Cannot edit locked student's data")
@@ -138,12 +148,12 @@ class Student:
     
 
     def __update_combination(self, value: tuple):
-        """Aktualizuje vybranou kombinaci
+        """Aktualizuje vybranou kombinaci.
 
-        Odhlasi studenta z predchozich predmetu a zapise do novych predmetu
+        Odhlasi studenta z predchozich predmetu a zapise do novych predmetu.
 
         Args:
-            value (tuple): Vybrana kombinace
+            value (tuple): Vybrana kombinace.
         """
         # rusi predchozi kombinaci
         if self.__chosen_comb is not None:
@@ -160,17 +170,17 @@ class Student:
     
 
     def clear_data(self):
-        """Vynuluje vygenerovana data studenta"""
+        """Vynuluje vygenerovana data studenta."""
         self._is_locked = False
         self.__update_combination(None)
         self.__possible_comb = []
 
     
     def get_qjson(self) -> dict:
-        """Vygeneruje JSON objekt pro ulozeni backendu
+        """Vygeneruje JSON objekt pro ulozeni backendu.
 
         Returns:
-            dict: Vygenerovany JSON objekt
+            dict: Vygenerovany JSON objekt.
         """
         obj = {}
         obj['_type'] = "Student"

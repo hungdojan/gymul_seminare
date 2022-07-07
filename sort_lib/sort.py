@@ -10,19 +10,48 @@ from PySide6.QtCore import QJsonArray, QJsonDocument, QFile, QIODevice, Signal, 
 
 
 class Sort(QObject):
+    """Hlavni trida modelu dat.
+
+    Tato trida si uklada data o studentech, predmetech a dnech. Pres tuto tridu
+    uzivatel spravuje jednotlive objekty.
+    """
     class FilePathException(Exception):
+        """Vyjimka pro neexistujici soubor.
+        
+        Tato vyjimka nastane v pripade, ze uzivatel se snazi nacist soubor, ktery neexistuje.
+        """
         pass
 
     class FileTypeException(Exception):
+        """Vyjimka pro spatnou koncovku souboru.
+
+        Tato vyjimka nastane v pripade, ze uzivatel se snazi pracovat se souborem,
+        u ktereho se ocekava jiny typ.
+        """
         pass
 
     class FileContentFormatException(Exception):
+        """Vyjimka pro spatny obsah souboru.
+
+        Tato vyjimka nastane v pripade, ze obsah souboru dodany uzivatelem
+        nesplnuje ocekavany format.
+        """
         pass
 
     class DataNotSortedException(Exception):
+        """Vyjimka pro nesetrizena data.
+
+        Tato vyjimka nastane v pripade, ze uzivatel pred vykonanim nejakeho
+        ukonu nesetridil data.
+        """
         pass
 
     class JsonFileCorruptedException(Exception):
+        """Vyjimka pro spatny/poskozeny soubor JSON.
+
+        Tato vyjimka nastane v pripade, ze nactenemu JSON souboru chybi
+        nejaky predem definovany obsah. 
+        """
         pass
 
     sort_toggle = Signal(bool)
@@ -58,16 +87,21 @@ class Sort(QObject):
         return self._is_sorted
     
 
-    def set_sorted(self, value):
+    def set_sorted(self, value: bool) -> None:
+        """Aktualizuje stav dat
+
+        Args:
+            value (bool): Nova hodnota dat
+        """
         self._is_sorted = value
         self.sort_toggle.emit(value)
 
 
     def add_day(self) -> Day:
-        """Prida novy den do seznamu
+        """Prida novy den do seznamu.
 
         Returns:
-            Day: Instance nove vytvoreneho dne
+            Day: Instance nove vytvoreneho dne.
         """
         day = Day(self)
         self.__days.append(day)
@@ -76,12 +110,12 @@ class Sort(QObject):
     
 
     def remove_day(self, index: int) -> None:
-        """Rusi a maze instanci dne ze seznamu
+        """Rusi a maze instanci dne ze seznamu.
 
         Indexuje se od 0.
 
         Args:
-            index (int): Index (pozice) dne k smazani
+            index (int): Index (pozice) dne k smazani.
         """
         if index in range(len(self.days)):
             self.__days[index].clear_data()
@@ -90,10 +124,10 @@ class Sort(QObject):
 
 
     def add_subject(self, name: str):
-        """Prida predmet do seznamu
+        """Prida predmet do seznamu.
 
         Args:
-            name (str): Jmeno predmetu
+            name (str): Jmeno predmetu.
         """
         if name is None:
             return
@@ -102,10 +136,10 @@ class Sort(QObject):
     
 
     def remove_subject(self, name: str) -> None:
-        """Maze jmeno predmetu ze seznamu predmetu
+        """Maze jmeno predmetu ze seznamu predmetu.
 
         Args:
-            name (str): Jmeno predmetu
+            name (str): Jmeno predmetu.
         """
         if name not in self.__subjects:
             return
@@ -115,16 +149,16 @@ class Sort(QObject):
     
 
     def add_student(self, student: Student) -> bool:
-        """Prida studenta do seznamu
+        """Prida studenta do seznamu.
 
         V seznamu se nesmi vyskytovat 2 studenti se stejnym ID. 
         V takovem pripade je ponechan stara verze studenta.
 
         Args:
-            student (Student): Instance studenta
+            student (Student): Instance studenta.
 
         Returns:
-            bool: Nenastala kolize ID studentu a novy student byl uspesne pridan
+            bool: Nenastala kolize ID studentu a novy student byl uspesne pridan.
         """
         if student is None:
             return False
@@ -136,44 +170,44 @@ class Sort(QObject):
 
 
     def remove_student(self, student_id: str) -> None:
-        """Maze studenta ze seznamu studentu
+        """Maze studenta ze seznamu studentu.
 
         Args:
-            student_id (str): ID studenta
+            student_id (str): ID studenta.
         """
-        found_students = list(filter(lambda x: x.id == student_id, self.__students))
+        found_students = [student for student in self.__students if student.id == student_id]
         if len(found_students) < 1:
             return
         self.set_sorted(False)
         found_students[0].clear_data()
-        self.__students = list(filter(lambda x: x.id != student_id, self.__students))
+        self.__students = [student for student in self.__students if student.id != student_id]
 
 
     def get_students_per_subject(self) -> dict:
-        """Vraci statistiku a poctu studentu na predmet
+        """Vraci statistiku a poctu studentu na predmet.
 
         Returns:
-            dict: Vypocitana statistika
+            dict: Vypocitana statistika.
         """
         d = {}
         for subj in self.__subjects:
-            d[subj] = len(list(filter(lambda x: subj in x.required_subjects, self.__students)))
+            d[subj] = len([student for student in self.__students if subj in student.required_subjects])
         return d
 
 
     def load_file_students(self, path: str) -> list:
-        """Nacte seznam studentu ze .csv souboru
+        """Nacte seznam studentu ze .csv souboru.
 
         Args:
-            path (str): Cesta k .csv souboru se studenty
+            path (str): Cesta k .csv souboru se studenty.
 
         Raises:
-            Sort.FilePathException: Neexistujici soubor
-            Sort.FileTypeException: Soubor ma spatnou koncovku
-            Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem
+            Sort.FilePathException: Neexistujici soubor.
+            Sort.FileTypeException: Soubor ma spatnou koncovku.
+            Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem.
 
         Returns:
-            list: Seznam ID nove pridanych studentu
+            list: Seznam ID nove pridanych studentu.
         """
         # seznam ID novych studentu
         new_students_id = []
@@ -199,7 +233,7 @@ class Sort(QObject):
 
                 # kontrola, zda neexistuje student se stejnym id
                 # pokud student existuje, je preskocen
-                if len(list(filter(lambda x: x.id == int(data[0]), self.__students))) > 0:
+                if len([student for student in self.__students if student.id == int(data[0])]) > 0:
                     continue
                 
                 # vlozi noveho studenta do seznamu studentu
@@ -212,18 +246,18 @@ class Sort(QObject):
 
 
     def load_file_subjects(self, path: str) -> list:
-        """Nacita seznam predmetu z .csv souboru
+        """Nacita seznam predmetu z .csv souboru.
 
         Args:
-            path (str): Cesta k souboru
+            path (str): Cesta k souboru.
 
         Raises:
-            Sort.FilePathException: Neexistujici soubor
-            Sort.FileTypeException: Soubor ma spatnou koncovku
-            Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem
+            Sort.FilePathException: Neexistujici soubor.
+            Sort.FileTypeException: Soubor ma spatnou koncovku.
+            Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem.
 
         Returns:
-            list: Seznam jmen nove pridanym predmetu
+            list: Seznam jmen nove pridanym predmetu.
         """
         # seznam koliznich jmen predmetu
         new_subjs = []
@@ -249,7 +283,7 @@ class Sort(QObject):
 
                 # kontrola, zda neexistuje se stejnym jmenem
                 # pokud predmet existuje, je preskocen
-                if len(list(filter(lambda x: x == data[0], self.__subjects))) < 1:
+                if len([subject for subject in self.__subjects if subject == data[0]]) < 1:
                     self.__subjects.add(data[0])
                     new_subjs.append(data[0])
 
@@ -257,16 +291,16 @@ class Sort(QObject):
 
     
     def sort_data(self) -> None:
-        """Setrizuje studenty do jednotlivych predmetu"""
+        """Setrizuje studenty do jednotlivych predmetu."""
         def convert_combinations(student: Student, comb: tuple) -> tuple:
-            """Prevadi kombinace dnu na vyslednou posloupnost predmetu
+            """Prevadi kombinace dnu na vyslednou posloupnost predmetu.
 
             Args:
-                student (Student): Instance daneho studenta
-                comb (tuple): Prislusna kombinace dnu
+                student (Student): Instance daneho studenta.
+                comb (tuple): Prislusna kombinace dnu.
 
             Returns:
-                tuple: Prevedena kombinace dnu na posloupnost predmetu
+                tuple: Prevedena kombinace dnu na posloupnost predmetu.
             """
             out = []
             # pruchod dny
@@ -282,21 +316,22 @@ class Sort(QObject):
             comb = []
             # Pro kazdy predmet zjisti, do jakeho dne by mohl byt zarazen
             for sub in s.required_subjects:
-                list_of_possible_days = list(filter(lambda x: sub in list(map(lambda y: y.name, x.subjects)), self.__days))
-                possible_days_indices = list(map(lambda x: self.__days.index(x), list_of_possible_days))
+                list_of_possible_days = [day for day in self.__days 
+                                         if sub in [subject.name for subject in day.subjects]]
+                possible_days_indices = [self.__days.index(i) for i in list_of_possible_days]
                 comb.append(possible_days_indices)
             
             # vytvori vsechny mozne kombinace dnu a ty ulozi do seznamu
             combination_of_days = list(itertools.product(*comb))
             # odstraneni kombinaci, ve kterem jsou 2 a vice predmetu ve stejny den
-            filtered_combinations = list(filter(lambda x: len(set(x)) == len(x), combination_of_days))
+            filtered_combinations = [days_comb for days_comb in combination_of_days
+                                     if len(set(days_comb)) == len(days_comb)]
             
             # konverguje vytvorenou kombinaci na dvojici (jmeno_predmetu, instance_dnu_s_predmetem)
-            converted_comb = list(map(lambda x: convert_combinations(s, x), filtered_combinations))
-            s.possible_comb = converted_comb
+            s.possible_comb = [convert_combinations(s, comb) for comb in filtered_combinations]
 
             # nastavi kombinaci u studentu, kteri maji jenom jednu kombinaci
-            if len(converted_comb) == 1:
+            if len(s.possible_comb) == 1:
                 try:
                     s.set_comb(0)
                 except:
@@ -305,14 +340,14 @@ class Sort(QObject):
 
 
     def export_data(self, dest_path: str):
-        """Vyexportuje data do .csv souboru
+        """Vyexportuje data do .csv souboru.
 
         Args:
-            dest_path (str): Cesta k cilove slozce
+            dest_path (str): Cesta k cilove slozce.
 
         Raises:
-            Sort.FilePathException: Cesta ke slozce neexistuje
-            Sort.DataNotSortedException: Data nejsou pripravena pro export
+            Sort.FilePathException: Cesta ke slozce neexistuje.
+            Sort.DataNotSortedException: Data nejsou pripravena pro export.
         """
         if dest_path is None or not os.path.isdir(dest_path):
             raise Sort.FilePathException('Invalid output directory path')
@@ -340,15 +375,15 @@ class Sort(QObject):
 
 
     def save_to_json(self) -> str:
-        """Vraci retezcovou reprezentaci backend objektu v JSON formatu
+        """Vraci retezcovou reprezentaci backend objektu v JSON formatu.
 
         Je potreba pred ulozenim backendu setridit data.
 
         Raises:
-            Sort.DataNotSortedException: Data nejsou setrizena
+            Sort.DataNotSortedException: Data nejsou setrizena.
 
         Returns:
-            str: Vygenerovany retezec JSON objektu
+            str: Vygenerovany retezec JSON objektu.
         """
         if not self._is_sorted:
             raise Sort.DataNotSortedException('Cannot save unsorted data')
@@ -374,7 +409,7 @@ class Sort(QObject):
 
 
     def clear_data(self):
-        """Vymaze vsechna ulozena data"""
+        """Vymaze vsechna ulozena data."""
         self.__students.clear()
         self.__days.clear()
         self.__subjects.clear()
@@ -383,16 +418,16 @@ class Sort(QObject):
 
     @staticmethod
     def load_save_file(path: str) -> 'Sort':
-        """Generuje objekt Sort ze vstupniho JSON souboru
+        """Generuje objekt Sort ze vstupniho JSON souboru.
 
         Args:
-            path (str): Cesta k JSON souboru
+            path (str): Cesta k JSON souboru.
 
         Raises:
-            Sort.JsonFileCorruptedException: Vstupni JSON soubor je poskozeny/neodpovida zakladnimu formatu
+            Sort.JsonFileCorruptedException: Vstupni JSON soubor je poskozeny/neodpovida zakladnimu formatu.
 
         Returns:
-            Sort: Inicializovany Sort objekt
+            Sort: Inicializovany Sort objekt.
         """
         # cteni ze souboru
         f = QFile(path)
@@ -440,9 +475,8 @@ class Sort(QObject):
         
         model.sort_data()
         # studenti s aktualizovanymi predmety
-        for student in list(filter(lambda x: len(x.possible_comb) > 0, model.students)):
-            student_json = list(filter(lambda x: x['id'] == student.id,
-                                       main_obj['students']))[0]
+        for student in [s for s in model.students if len(s.possible_comb) > 0]:
+            student_json = [s for s in main_obj['students'] if s['id'] == student.id][0]
             if len(student_json['chosen_comb']) == 0:
                 student.set_comb(-1)
             else:
