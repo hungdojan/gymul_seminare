@@ -10,9 +10,8 @@ from gui_lib.g_combination_dialog import GCombinationDialog
 
 class GStudent(QWidget):
 
-    locked_triggered = Signal()
-    update_style_triggered = Signal()
-    update_required_subjects = Signal()
+    # Signal se vysle, pokud se aktualizuje seznam pozadovanych predmetu studenta
+    required_subjects_changed = Signal()
 
     def __init__(self, model: Student, base_layout: QBoxLayout, base_gparent: 'gui_lib.g_main_window.GMainWindow'):
         super().__init__()
@@ -20,9 +19,7 @@ class GStudent(QWidget):
         self._base_gparent = base_gparent
 
         # propojeni signalu a slotu
-        self._base_gparent.subject_list_update.connect(self.update_lof_items)
-        self.update_style_triggered.connect(self.update_style)
-        self._base_gparent.data_updated.connect(self.update_content)
+        self._base_gparent.subject_list_updated.connect(self.update_lof_items)
         self.customContextMenuRequested.connect(self.show_context_menu)
 
         # nastaveni studentova widgetu
@@ -54,6 +51,7 @@ class GStudent(QWidget):
     
 
     def _setupUI(self) -> None:
+        """Vygeneruje obsah g-student."""
         self.setLayout(QHBoxLayout())
         self.layout().setSpacing(1)
         self.layout().setContentsMargins(10, 3, 10, 3)
@@ -80,7 +78,6 @@ class GStudent(QWidget):
             index = cb.findText(i)
             cb.setCurrentIndex(index)
             cb.currentIndexChanged.connect(self.update_subjects)
-            self.update_style_triggered.connect(cb.update_style)
             self.subjects_cb.append(cb)
         
         # pridani jednotlivych elementu do hlavniho elementu GStudent
@@ -93,11 +90,14 @@ class GStudent(QWidget):
 
 
     def mousePressEvent(self, a0: QMouseEvent) -> None:
+        """Prepsana funkce reakce na udalost mysi."""
         if a0.button() == Qt.MouseButton.MiddleButton:
+            # uzamceni studenta
             self.setProperty('isSelected', not self.property('isSelected'))
             self._base_gparent.select_student(self, self.property('isSelected'))
-            self.update_style_triggered.emit()
+            self.update_style()
         elif a0.button() == Qt.MouseButton.LeftButton:
+            # vyber kombinaci
             if not self.model.is_locked:
                 GCombinationDialog(self).exec()
         super().mousePressEvent(a0)
@@ -144,8 +144,7 @@ class GStudent(QWidget):
             self.setProperty('status', StudentStatus.MUL_SET)
         else:
             self.setProperty('status', StudentStatus.ONLY_ONE)
-        self.update_style_triggered.emit()
-        self.locked_triggered.emit()
+        self.update_style()
 
 
     @Slot(list)
@@ -216,7 +215,7 @@ class GStudent(QWidget):
     
 
     @Slot()
-    def update_data(self) -> None:
+    def update_personal_data(self) -> None:
         """Aktualizace dat studenta z backendu"""
         self.first_name_lbl.setText(self.model.first_name)
         self.last_name_lbl.setText(self.model.last_name)
@@ -233,6 +232,6 @@ class GStudent(QWidget):
     @Slot(int)
     def update_subjects(self, index: int):
         current_comb = tuple([cb.currentText() for cb in self.subjects_cb])
-        self._model.set_required_subjects(current_comb)
+        self._model.required_subjects = current_comb
         self._base_gparent.view_updated.emit()
-        self.update_required_subjects.emit()
+        self.required_subjects_changed.emit()

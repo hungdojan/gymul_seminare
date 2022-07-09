@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QDialog, QFormLayout, QLineEdit, QVBoxLayout, QWidget, QDialogButtonBox
-import PySide6
 import gui_lib.g_student
 
 class GEditStudentDialog(QDialog):
+    """Trida pro okno upravujici studentovy osobni data."""
     
     def __init__(self, gstudent: 'gui_lib.g_student.GStudent'):
         super().__init__()
@@ -11,6 +11,11 @@ class GEditStudentDialog(QDialog):
         self.setWindowTitle('Upravit data studenta')
         self.setLayout(QVBoxLayout())
 
+        self._setupUI()
+    
+
+    def _setupUI(self):
+        """Vygenerovani okna GEditStudentDialog."""
         # nastaveni rozlozeni formulare
         form_w = QWidget()
         form_w.setLayout(QFormLayout())
@@ -28,10 +33,11 @@ class GEditStudentDialog(QDialog):
         button_box.rejected.connect(self.reject)
         self.layout().addWidget(button_box)
     
+
     def accept(self) -> None:
         """Akce po uspesnem ukonceni dialogoveho okna"""
         self.gstudent.model.first_name = self.fn_lbl.text()
         self.gstudent.model.last_name = self.ln_lbl.text()
         self.gstudent.model.class_id = self.class_lbl.text()
-        self.gstudent.update_data()
+        self.gstudent.update_personal_data()
         super().accept()

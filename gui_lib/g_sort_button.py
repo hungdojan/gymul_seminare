@@ -3,16 +3,17 @@ from PySide6.QtGui import QPaintEvent, QPainter
 from PySide6.QtCore import Slot
 
 class GSortButton(QPushButton):
+    """Rozsirena trida QPushButton o komunikaci s QCSS."""
     def __init__(self, name: str):
         super().__init__(name)
         self.setProperty('isSorted', False)
 
     
     def paintEvent(self, event: QPaintEvent) -> None:
-        """Predefinuje funkci paintEvent
+        """Predefinuje funkci paintEvent.
 
         Args:
-            event (QPaintEvent): Promenna udalosti QPaintEvent
+            event (QPaintEvent): Promenna udalosti QPaintEvent.
         """
         opt = QStyleOption()
         opt.initFrom(self)
@@ -22,6 +23,7 @@ class GSortButton(QPushButton):
 
 
     def update_style(self):
+        """Aktualizuje vzhled GSortButton."""
         self.style().unpolish(self)
         self.style().polish(self)
         self.update()
@@ -29,5 +31,6 @@ class GSortButton(QPushButton):
 
     @Slot(bool)
     def sort_button_update(self, value: bool):
+        """Aktualizuje stav GSortButton."""
         self.setProperty('isSorted', value)
         self.update_style()

@@ -8,6 +8,12 @@ class GCombinationDialog(QDialog):
         self.setWindowTitle('Výběr kombinace předmětů')
         self.gstudent = gstudent
 
+        self._setupUI()
+
+
+    def _setupUI(self):
+        """Vygeneruje okno GCombinationDialog."""
+
         # vrchni cast okna
         self.setLayout(QVBoxLayout())
         self.create_combobox()
@@ -21,7 +27,7 @@ class GCombinationDialog(QDialog):
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         self.layout().addWidget(button_box)
-    
+
 
     def create_combobox(self) -> None:
         """Vytvori ComboBox s vybranymi moznostmi"""

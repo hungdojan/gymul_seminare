@@ -59,18 +59,6 @@ GStudent[isSelected='false'] QLabel#id {
     color: balck;
 }
 
-/* Subject combobox collision highlight */
-/* https://www.colorxs.com/color/dark-pastel-red */
-GComboBox[valid = 'false'] {
-    background-color: #c23b22;
-    color: #eee;
-}
-
-GComboBox[valid = 'true'] {
-    background-color: #fff;
-    color: #000;
-}
-
 /* GSubject style */
 GSubject QLabel {
     font-size: 10pt;
@@ -117,11 +105,3 @@ GSortButton[isSorted = 'false'] {
     font-weight: bold;
     font-size: 15pt;
 }
-
-/* temporary colors
-https://www.color-hex.com/color-palette/94888
-{
-    background-color: #3e4772;
-    color: #eee;
-}
- */

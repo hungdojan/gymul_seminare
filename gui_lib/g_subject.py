@@ -5,27 +5,33 @@ from PySide6.QtCore import Signal, Slot, Qt
 from PySide6.QtGui import QMouseEvent, QPaintEvent, QPainter
 
 class GSubject(QFrame):
+    """Graficka reprezentace predmetu ve dni."""
 
-    update_style_triggered = Signal()
-    mouse_pressed = Signal()
+    # Signal se vysle v pripade zmeny vybranych predmetu
+    selected_subjects_changed = Signal()
 
     def __init__(self, name: str, base_gparent: 'gui_lib.g_day.GDay', model: Subject=None):
         super().__init__()
         self._base_gparent = base_gparent
         self._model = model
+        # Jmeno predmetu
         self._name = name
 
         self.setLayout(QHBoxLayout())
         self.layout().setContentsMargins(5,2,5,2)
-        self.update_style_triggered.connect(self.update_style)
+        self._setupUI()
+
+        self.setProperty('isSelected', model is not None)
+        self.content_update()
+
+
+    def _setupUI(self):
+        """Vygeneruje obsah g-predmetu."""
         self.name_lbl = QLabel(self._name)
         self.counter_lbl = QLabel('0')
-        self.setProperty('isSelected', model is not None)
 
         self.layout().addWidget(self.name_lbl, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.counter_lbl, alignment=Qt.AlignmentFlag.AlignRight)
-        self.content_update()
-
 
     @property
     def model(self):
@@ -43,24 +49,29 @@ class GSubject(QFrame):
 
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Prepsana funkce reakce na udalost mysi."""
+        # leve tlacitko na mysi prepina stav oznaceni predmetu
         if event.button() == Qt.MouseButton.LeftButton:
             self.setProperty('isSelected', not self.property('isSelected'))
+
+            # meni zobrazeni g-predmetu
             if self.property('isSelected'):
                 self._model = self._base_gparent.model.add_subject_name(self._name)
             else:
                 self._base_gparent.model.remove_subject(self._name)
                 self._model = None
+
             self.content_update()
-            self.mouse_pressed.emit()
+            self.selected_subjects_changed.emit()
         else:
             super().mousePressEvent(event)
     
 
     def paintEvent(self, event: QPaintEvent) -> None:
-        """Predefinuje funkci paintEvent
+        """Predefinuje funkci paintEvent.
 
         Args:
-            event (QPaintEvent): Promenna udalosti QPaintEvent
+            event (QPaintEvent): Promenna udalosti QPaintEvent.
         """
         opt = QStyleOption()
         opt.initFrom(self)
@@ -71,7 +82,7 @@ class GSubject(QFrame):
 
     @Slot()
     def update_style(self):
-        """Aktualizuje vzhled GSubject"""
+        """Aktualizuje vzhled GSubject."""
         self.style().unpolish(self)
         self.style().polish(self)
         self.update()
@@ -79,6 +90,7 @@ class GSubject(QFrame):
 
     @Slot()
     def content_update(self):
+        """Upravuje obsah g-predmetu."""
         if self._model is None:
             self.counter_lbl.setParent(None)
         else:

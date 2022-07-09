@@ -3,14 +3,13 @@ from PySide6.QtCore import QFile, QIODevice, Qt
 import rc
 
 class GHelpDialog(QDialog):
+    """Trida pro okno s napovedou."""
     
     def __init__(self, parent):
         super().__init__(parent, Qt.Dialog)
         self.setWindowTitle('Nápověda')
         self.setMinimumWidth(1000)
         self.setMinimumHeight(500)
-        self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(0,0,0,0)
 
         # nacteni obsahu navodu
         content_tb = QTextBrowser()
@@ -23,6 +22,8 @@ class GHelpDialog(QDialog):
         font.setPointSize(13)
         content_tb.setFont(font)
 
+        self.setLayout(QVBoxLayout())
+        self.layout().setContentsMargins(0,0,0,0)
         self.layout().addWidget(content_tb)
         self.show()
 

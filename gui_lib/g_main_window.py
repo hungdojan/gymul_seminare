@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import *
-from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut, QStandardItemModel, QStandardItem
+from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut
 from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
-import sort_lib.sort
+
 from gui_lib.g_student import GStudent
 from gui_lib.g_day import GDay
 from gui_lib.g_constants import StudentStatus
@@ -9,37 +9,49 @@ from gui_lib.g_about_dialog import GAboutDialog
 from gui_lib.g_help_dialog import GHelpDialog
 from gui_lib.g_subject_table_view import GSubjectTableView
 from gui_lib.g_sort_button import GSortButton
+
 import rc
+import sort_lib.sort
 
 class GMainWindow(QMainWindow):
+    """Trida reprezentujici hlavni okno programu."""
 
+    # Signal se vysle, pokud je potreba aktualizovat zobrazeni dat
     view_updated = Signal()
+    # Signal se vysle, pokud je potreba, aby se aktualizovaly deti tohoto okna
     data_updated = Signal()
-    subject_list_update = Signal(list)
-    update_subject_counter = Signal()
+    # Signal se vysle, pokud se zmeni seznam predmetu v modelu
+    subject_list_updated = Signal(list)
+    # Signal se vysle, pokud se zmeni pocet studentu/student zmeni svuj vyber
+    subject_counter_changed = Signal()
 
 
     def __init__(self, model: 'sort_lib.sort.Sort', parent: QWidget=None):
         super().__init__(parent)
+        # hlavni sort model
         self._model = model
+        # list g-dnu
         self.lof_gdays = []
+        # list g-studentu
         self.lof_gstudents = []
 
-        self.setupUI()
+        self._setupUI()
+        # seznam oznacenych g-studentu
         self.selected_gstudents = set()
+        # seznam oznacenych g-dnu
         self.selected_gdays = set()
 
-        # self.data_updated.connect(self.filter_students) 
         self.view_updated.connect(self.view_update)
-        self.update
         self.load_stylesheet()
+
 
     @property
     def model(self) -> 'sort_lib.sort.Sort':
         return self._model
 
 
-    def setupUI(self) -> None:
+    def _setupUI(self) -> None:
+        """Vygenerovani hlavniho okna."""
         self.setWindowTitle('Seminare')
         # nastaveni pracovni plochy
         main_widget = QWidget()
@@ -48,7 +60,7 @@ class GMainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
         self._setup_menu_bar()
-        self._setup_right_panel()
+        self._setup_subject_table_view()
         self._setup_student_panel()
         self._setup_day_panel()
 
@@ -130,16 +142,16 @@ class GMainWindow(QMainWindow):
         lof_students_scrar.setFrameShadow(QFrame.Shadow.Plain)
 
         # koren skrolovaci plochy
-        frame = QFrame(lof_students_scrar)
+        self.student_frame = QFrame(lof_students_scrar)
+        self.student_frame.setLayout(QVBoxLayout())
         # rozvrzeni skrolovaci plochy
-        self.student_vbox = QVBoxLayout(frame)
-        self.student_vbox.setContentsMargins(3, 3, 3, 3)
-        self.student_vbox.setSpacing(3)
-        self.student_vbox.addStretch()
+        self.student_frame.layout().setContentsMargins(3, 3, 3, 3)
+        self.student_frame.layout().setSpacing(3)
+        self.student_frame.layout().addStretch()
 
-        frame.setLayout(self.student_vbox)
+        # self.student_frame.setLayout(self.student_vbox)
         lof_students_scrar.setWidgetResizable(True)
-        lof_students_scrar.setWidget(frame)
+        lof_students_scrar.setWidget(self.student_frame)
         # vlozeni do hlavni plochy
         self.main_grid_layout.addWidget(lof_students_scrar, 1, 0, 3, 2)
 
@@ -153,48 +165,54 @@ class GMainWindow(QMainWindow):
             'green': QPushButton('ON', objectName='SuccessButton'),
             'blue-ish': QPushButton('ON', objectName='ChosenButton')
         }
-        w = QWidget()
-        w.setLayout(QHBoxLayout())
+        student_filter_widget = QWidget()
+        student_filter_widget.setLayout(QHBoxLayout())
         for btn in self.buttons:
             self.buttons[btn].setCheckable(True)
             self.buttons[btn].setChecked(True)
             self.buttons[btn].setAutoFillBackground(True)
             self.buttons[btn].toggled.connect(self.filter_students)
-            w.layout().addWidget(self.buttons[btn])
-        self.main_grid_layout.addWidget(w, 0, 1)
+            student_filter_widget.layout().addWidget(self.buttons[btn])
+        self.main_grid_layout.addWidget(student_filter_widget, 0, 1)
 
-        # zobrazeni dat
+        # pridani studentu z modelu
         for student in self._model.students:
-            gstudent = GStudent(student, self.student_vbox, self)
-            gstudent.update_required_subjects.connect(self.table_view.update_subject_counter)
+            gstudent = GStudent(student, self.student_frame.layout(), self)
+            gstudent.required_subjects_changed.connect(self.table_view.subject_counter_changed)
+            self.data_updated.connect(gstudent.update_content)
             self.lof_gstudents.append(gstudent)
     
 
     def _setup_day_panel(self) -> None:
+        # hlavni plocha s moznosti skrolovat
         self.days_scrollarea = QScrollArea()
         self.days_scrollarea.setWidgetResizable(True)
         self.days_scrollarea.setWidget(QFrame())
         self.days_scrollarea.widget().setLayout(QVBoxLayout())
         self.days_scrollarea.widget().layout().addStretch()
 
-        # FIXME: refactor
+        # nazev useku
         self.main_grid_layout.addWidget(QLabel('Dny'), 0, 2)
-        w = QWidget()
-        w.setLayout(QHBoxLayout())
+
+        # pracovni plocha pro operace se dny (pridani, mazani, filtrace)
+        day_buttons_widget = QWidget()
+        day_buttons_widget.setLayout(QHBoxLayout())
         add_btn = QPushButton('ADD')
         add_btn.clicked.connect(self.slt_add_day)
         self.filter_btn = QPushButton('FILTER')
         self.filter_btn.setCheckable(True)
         delete_btn = QPushButton('DELETE')
         delete_btn.clicked.connect(self.slt_delete_days)
-        w.layout().addWidget(add_btn)
-        w.layout().addWidget(self.filter_btn)
-        w.layout().addWidget(delete_btn)
-        self.main_grid_layout.addWidget(w, 0, 3)
+        day_buttons_widget.layout().addWidget(add_btn)
+        day_buttons_widget.layout().addWidget(self.filter_btn)
+        day_buttons_widget.layout().addWidget(delete_btn)
+        self.main_grid_layout.addWidget(day_buttons_widget, 0, 3)
 
+        # pracovni plocha se dny
         self.day_widget = QWidget()
         self.day_widget.setLayout(QVBoxLayout())
 
+        # pridani dnu z modelu
         for day in self._model.days:
             gday = GDay(day, self.days_scrollarea.widget().layout(), self)
 
@@ -204,17 +222,21 @@ class GMainWindow(QMainWindow):
         self.main_grid_layout.addWidget(self.days_scrollarea, 1, 2, 1, 2)
     
 
-    def _setup_right_panel(self) -> None:
-
+    def _setup_subject_table_view(self) -> None:
+        # Nazev useku
         self.main_grid_layout.addWidget(QLabel('Statistiky'), 2, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # tabulka s predmety
         self.table_view = GSubjectTableView(self)
-        self.subject_list_update.connect(self.table_view.update_subjects_list)
-        self.update_subject_counter.connect(self.table_view.update_subject_counter)
+        self.subject_list_updated.connect(self.table_view.update_subjects_list)
+        self.subject_counter_changed.connect(self.table_view.subject_counter_changed)
         self.main_grid_layout.addWidget(self.table_view, 3, 2)
+
+        # tlacitko na roztrideni dat
         self.sort_button = GSortButton('sort')
-        self._model.sort_toggle.connect(self.sort_button.sort_button_update)
         self.sort_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.sort_button.clicked.connect(self.slt_sort)
+        self._model.sort_toggle.connect(self.sort_button.sort_button_update)
         self.main_grid_layout.addWidget(self.sort_button, 3, 3)
 
     
@@ -273,7 +295,7 @@ class GMainWindow(QMainWindow):
         self.selected_gstudents = set(self.lof_gstudents)
         self.slt_delete_days()
         self.slt_delete_student()
-        self.subject_list_update.emit(self._model.subjects)
+        self.subject_list_updated.emit(self._model.subjects)
         del self._model
         self._model = sort_lib.sort.Sort()
 
@@ -312,19 +334,23 @@ class GMainWindow(QMainWindow):
         self.slt_delete_student()
         self.lof_gdays.clear()
         self.lof_gstudents.clear()
-        self.subject_list_update.emit(self._model.subjects)
+        self.subject_list_updated.emit(self._model.subjects)
 
         # pridani dat
         self._model = model
-        self.lof_gstudents = [GStudent(student, self.student_vbox, self) 
-                              for student in self.model.students]
+        for student in self._model.students:
+            gstudent = GStudent(student, self.student_frame.layout(), self)
+            gstudent.required_subjects_changed.connect(self.table_view.subject_counter_changed)
+            self.data_updated.connect(gstudent.update_content)
+            self.lof_gstudents.append(gstudent)
+
         for day in self._model.days:
             gday = GDay(day, self.days_scrollarea.widget().layout(), self)
 
             self.filter_btn.toggled.connect(gday.filter_toggle)
             self.lof_gdays.append(gday)
         self.view_updated.emit()
-        self.subject_list_update.emit(self._model.subjects)
+        self.subject_list_updated.emit(self._model.subjects)
         self.sort_button.sort_button_update(True)
         # TODO: subjects
         
@@ -372,7 +398,7 @@ class GMainWindow(QMainWindow):
         filename = dialog.selectedFiles()[0]
         try:
             new_subj = self.model.load_file_subjects(filename)
-            self.subject_list_update.emit(new_subj)
+            self.subject_list_updated.emit(new_subj)
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
@@ -431,8 +457,9 @@ class GMainWindow(QMainWindow):
             new_ids = self.model.load_file_students(filename)
             new_students = [student for student in self.model.students if student.id in new_ids]
             for student in new_students:
-                gstudent = GStudent(student, self.student_vbox, self)
-                gstudent.update_required_subjects.connect(self.table_view.update_subject_counter)
+                gstudent = GStudent(student, self.student_frame.layout(), self)
+                self.data_updated.connect(gstudent.update_content)
+                gstudent.required_subjects_changed.connect(self.table_view.subject_counter_changed)
                 self.lof_gstudents.append(gstudent)
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
@@ -443,7 +470,7 @@ class GMainWindow(QMainWindow):
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
-        self.update_subject_counter.emit()
+        self.subject_counter_changed.emit()
 
 
     @Slot()
@@ -518,19 +545,23 @@ class GMainWindow(QMainWindow):
         """Slot provadi filtraci studentu podle jejich statusu"""
         self.status_bar.showMessage('Provádím filtraci studentů')
         # red
-        red_students = list(filter(lambda x: x.get_status() == StudentStatus.NO_COMB, self.lof_gstudents))
+        red_students = [gstudent for gstudent in self.lof_gstudents
+                        if gstudent.get_status() == StudentStatus.NO_COMB]
         list(map(lambda x: x.setVisible(self.buttons['red'].isChecked()), red_students))
 
         # yellow
-        yellow_students = list(filter(lambda x: x.get_status() == StudentStatus.MUL_COMB, self.lof_gstudents))
+        yellow_students = [gstudent for gstudent in self.lof_gstudents
+                           if gstudent.get_status() == StudentStatus.MUL_COMB]
         list(map(lambda x: x.setVisible(self.buttons['yellow'].isChecked()), yellow_students))
 
         # blue-ish
-        blueish_students = list(filter(lambda x: x.get_status() == StudentStatus.MUL_SET, self.lof_gstudents))
+        blueish_students = [gstudent for gstudent in self.lof_gstudents
+                            if gstudent.get_status() == StudentStatus.MUL_SET]
         list(map(lambda x: x.setVisible(self.buttons['blue-ish'].isChecked()), blueish_students))
 
         # green
-        green_students = list(filter(lambda x: x.get_status() == StudentStatus.ONLY_ONE, self.lof_gstudents))
+        green_students = [gstudent for gstudent in self.lof_gstudents
+                          if gstudent.get_status() == StudentStatus.ONLY_ONE]
         list(map(lambda x: x.setVisible(self.buttons['green'].isChecked()), green_students))
 
         for btn in self.buttons:
