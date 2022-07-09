@@ -17,15 +17,16 @@ class GEditStudentDialog(QDialog):
     def _setupUI(self):
         """Vygenerovani okna GEditStudentDialog."""
         # nastaveni rozlozeni formulare
-        form_w = QWidget()
-        form_w.setLayout(QFormLayout())
         self.fn_lbl = QLineEdit(self.gstudent.model.first_name)
         self.ln_lbl = QLineEdit(self.gstudent.model.last_name)
         self.class_lbl = QLineEdit(self.gstudent.model.class_id)
-        form_w.layout().addRow('Jméno:', self.fn_lbl)
-        form_w.layout().addRow("Příjmení:", self.ln_lbl)
-        form_w.layout().addRow("Třída:", self.class_lbl)
-        self.layout().addWidget(form_w)
+
+        form_layout = QFormLayout()
+        form_layout.addRow('Jméno:', self.fn_lbl)
+        form_layout.addRow("Příjmení:", self.ln_lbl)
+        form_layout.addRow("Třída:", self.class_lbl)
+        
+        self.layout().addLayout(form_layout)
 
         # tlacitka v dolni casti okna
         button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)

@@ -105,3 +105,12 @@ GSortButton[isSorted = 'false'] {
     font-weight: bold;
     font-size: 15pt;
 }
+
+GAboutDialog QLabel {
+    font-size: 13pt;
+}
+
+GAboutDialog QLabel#AppNameLabel {
+    font-size: 17pt;
+    font-weight: bold;
+}
