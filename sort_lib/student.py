@@ -1,3 +1,4 @@
+from tkinter import W
 import sort_lib.sort
 from PySide6.QtCore import QJsonArray
 
@@ -22,7 +23,7 @@ class Student:
         # Trida studenta
         self.__class_id     = class_id
         # Seznam vybranych predmetu
-        self.__required_subjects = tuple(map(lambda x: x if x else None, required_subjects))
+        self.__required_subjects = None
         # Hlavni rodic
         self.__parent = parent
 
@@ -33,6 +34,7 @@ class Student:
         self.__chosen_comb: tuple = None
         # Zamek proti prepisu
         self._is_locked = False
+        self.required_subjects = tuple(map(lambda x: x if x else None, required_subjects))
     
 
     @property
@@ -121,9 +123,20 @@ class Student:
         """
         if self._is_locked:
             raise Student.StudentLockedException("Cannot edit locked student's data")
+        
+        # odhlaseni studenta ze seznamu predmetu
+        if self.__required_subjects is not None:
+            list(map(lambda name: self.__parent.detach_student(self, name), self.__required_subjects))
+
+        self.__required_subjects = value
+        
+        # ulozeni studenta do seznamu predmetu
+        if self.__required_subjects is not None:
+            list(map(lambda name: self.__parent.attach_student(self, name), self.__required_subjects))
+
         self.__update_combination(None)
         self.__possible_comb = []
-        self.__required_subjects = value
+        # FIXME: optimalization??
         self.__parent.set_sorted(False)
     
 
@@ -145,6 +158,18 @@ class Student:
             self.__update_combination(None)
         else:
             self.__update_combination(self.__possible_comb[index])
+    
+
+    def receive_msg(self, msg: str):
+        try:
+            index = self.__required_subjects.index(msg)
+        except ValueError:
+            return
+        
+        new_comb = list(self.__required_subjects)
+        new_comb[index] = None
+        self._is_locked = False
+        self.required_subjects = tuple(new_comb)
     
 
     def __update_combination(self, value: tuple):
@@ -172,8 +197,7 @@ class Student:
     def clear_data(self):
         """Vynuluje vygenerovana data studenta."""
         self._is_locked = False
-        self.__update_combination(None)
-        self.__possible_comb = []
+        self.required_subjects = None
 
     
     def get_qjson(self) -> dict:
