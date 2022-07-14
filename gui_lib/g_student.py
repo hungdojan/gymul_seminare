@@ -19,7 +19,6 @@ class GStudent(QWidget):
         self._base_gparent = base_gparent
 
         # propojeni signalu a slotu
-        self._base_gparent.subject_list_updated.connect(self.update_lof_items)
         self.customContextMenuRequested.connect(self.show_context_menu)
 
         # nastaveni studentova widgetu
@@ -72,11 +71,8 @@ class GStudent(QWidget):
 
         # ComboBoxy jednotlivych predmetu
         self.subjects_cb = []
-        for i in self._model.required_subjects:
-            cb = GComboBox()
-            cb.addItems(self._base_gparent.model.subjects)
-            index = cb.findText(i)
-            cb.setCurrentIndex(index)
+        for i in range(len(self._model.required_subjects)):
+            cb = GComboBox(self, i)
             cb.currentIndexChanged.connect(self.update_subjects)
             self.subjects_cb.append(cb)
         
@@ -147,27 +143,6 @@ class GStudent(QWidget):
         self.update_style()
 
 
-    @Slot(list)
-    def update_lof_items(self, subjects: list):
-        """Aktualizace obsahu jednotlivych predmetovych Combobox
-
-        Args:
-            subjects (list): List jmen nove pridanych/smazanych predmetu
-        """
-        for s in subjects:
-            # aktualizace nove pridanych predmetu
-            if s in self._base_gparent.model.subjects:
-                list(map(lambda x: x.addItem(s), self.subjects_cb))
-            # odstraneni smazanych predmetu
-            else:
-                for cb in self.subjects_cb:
-                    index = self.subjects_cb[cb].findText(s)
-                    self.subjects_cb[cb].removeIndex(index)
-        
-        # serazeni nazvu predmetu v combobox
-        list(map(lambda x: x.model().sort(0), self.subjects_cb))
-
-
     @Slot(QPoint)
     def show_context_menu(self, point: QPoint):
         """Zobrazuje context menu po kliknutim pravym tlacitkem na element
@@ -194,7 +169,7 @@ class GStudent(QWidget):
         edit_action = context_menu.addAction('Upravit data')
         edit_action.triggered.connect(lambda: GEditStudentDialog(self).exec())
         context_menu.addSeparator()
-        
+
         # maze studenta
         delete_action = context_menu.addAction('Smazat')
         delete_action.triggered.connect(self.delete_gstudent)
@@ -225,13 +200,33 @@ class GStudent(QWidget):
     @Slot()
     def delete_gstudent(self) -> None:
         """Mazani tohoto studenta z programu"""
+        # TODO: disconnect connections
         self._base_gparent.model.remove_student(self.model.id)
+        self._base_gparent.lof_gstudents.remove(self)
         self.setParent(None)
     
 
     @Slot(int)
     def update_subjects(self, index: int):
-        current_comb = tuple([cb.currentText() for cb in self.subjects_cb])
+        cb = self.sender()
+        if not isinstance(cb, GComboBox):
+            return
+        if not cb.model().available:
+            cb.update_view()
+            return
+
+        _index = self.subjects_cb.index(cb)
+        # if self._model.required_subjects[_index] is None 
+        if self._model.required_subjects[_index] == cb.currentText():
+            return
+        current_comb = tuple([cb.currentText() if cb.currentText() != '-' else None for cb in self.subjects_cb])
         self._model.required_subjects = current_comb
         self._base_gparent.view_updated.emit()
         self.required_subjects_changed.emit()
+    
+
+    @Slot()
+    def update_model(self):
+        self.first_name_lbl.setText(self.model.first_name)
+        self.last_name_lbl.setText(self.model.last_name)
+        self.class_id_lbl.setText(self.model.class_id)

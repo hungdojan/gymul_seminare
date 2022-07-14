@@ -9,9 +9,12 @@ from gui_lib.g_about_dialog import GAboutDialog
 from gui_lib.g_help_dialog import GHelpDialog
 from gui_lib.g_subject_table_view import GSubjectTableView
 from gui_lib.g_sort_button import GSortButton
+from gui_lib.subject_model import SubjectModel
 
 import rc
+from sort_lib.day import Day
 import sort_lib.sort
+from sort_lib.student import Student
 
 class GMainWindow(QMainWindow):
     """Trida reprezentujici hlavni okno programu."""
@@ -22,6 +25,8 @@ class GMainWindow(QMainWindow):
     data_updated = Signal()
     # Signal se vysle, pokud se zmeni seznam predmetu v modelu
     subject_list_updated = Signal(list)
+    # Signal se vysle, pokud se ma smazat seznam predmetu
+    subject_list_clear = Signal()
     # Signal se vysle, pokud se zmeni pocet studentu/student zmeni svuj vyber
     subject_counter_changed = Signal()
 
@@ -34,6 +39,10 @@ class GMainWindow(QMainWindow):
         self.lof_gdays = []
         # list g-studentu
         self.lof_gstudents = []
+        # model predmetu
+        self._subject_model = SubjectModel(self._model)
+        self.subject_list_updated.connect(self._subject_model.update_list)
+        self.subject_list_clear.connect(self._subject_model.clear_model)
 
         self._setupUI()
         # seznam oznacenych g-studentu
@@ -48,6 +57,11 @@ class GMainWindow(QMainWindow):
     @property
     def model(self) -> 'sort_lib.sort.Sort':
         return self._model
+    
+
+    @property
+    def subject_model(self) -> SubjectModel:
+        return self._subject_model
 
 
     def _setupUI(self) -> None:
@@ -176,11 +190,7 @@ class GMainWindow(QMainWindow):
         self.main_grid_layout.addWidget(student_filter_widget, 0, 1)
 
         # pridani studentu z modelu
-        for student in self._model.students:
-            gstudent = GStudent(student, self.student_frame.layout(), self)
-            gstudent.required_subjects_changed.connect(self.table_view.subject_counter_changed)
-            self.data_updated.connect(gstudent.update_content)
-            self.lof_gstudents.append(gstudent)
+        list(map(lambda x: self.create_gstudent(x), self._model.students))
     
 
     def _setup_day_panel(self) -> None:
@@ -213,11 +223,7 @@ class GMainWindow(QMainWindow):
         self.day_widget.setLayout(QVBoxLayout())
 
         # pridani dnu z modelu
-        for day in self._model.days:
-            gday = GDay(day, self.days_scrollarea.widget().layout(), self)
-
-            self.filter_btn.toggled.connect(gday.filter_toggle)
-            self.lof_gdays.append(gday)
+        list(map(lambda x: self.create_gday(x), self._model.days))
 
         self.main_grid_layout.addWidget(self.days_scrollarea, 1, 2, 1, 2)
     
@@ -228,8 +234,6 @@ class GMainWindow(QMainWindow):
 
         # tabulka s predmety
         self.table_view = GSubjectTableView(self)
-        self.subject_list_updated.connect(self.table_view.update_subjects_list)
-        self.subject_counter_changed.connect(self.table_view.subject_counter_changed)
         self.main_grid_layout.addWidget(self.table_view, 3, 2)
 
         # tlacitko na roztrideni dat
@@ -246,6 +250,25 @@ class GMainWindow(QMainWindow):
         stylesheet.open(QIODevice.OpenModeFlag.ReadOnly)
         style = str(stylesheet.readAll(), 'utf-8')
         self.setStyleSheet(style)
+    
+
+    def create_gstudent(self, student: Student) -> GStudent:
+        gstudent = GStudent(student, self.student_frame.layout(), self)
+
+        # pripojeni signalu a slotu
+        gstudent.required_subjects_changed.connect(self.table_view.model().sourceModel().update_model_counter)
+        self.data_updated.connect(gstudent.update_content)
+
+        self.lof_gstudents.append(gstudent)
+        return gstudent
+    
+
+    def create_gday(self, day: Day) -> GDay:
+        gday = GDay(day, self.days_scrollarea.widget().layout(), self)
+
+        self.filter_btn.toggled.connect(gday.filter_toggle)
+        self.lof_gdays.append(gday)
+        return gday
 
 
     def select_student(self, gstudent: 'GStudent', status: bool):
@@ -286,18 +309,31 @@ class GMainWindow(QMainWindow):
         self.style().drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, p, self)
         super().paintEvent(event)
 
+
+    def init_new_project(self, model: sort_lib.sort.Sort):
+        # odpojeni starych widgetu
+        self.data_updated.disconnect()
+        self.selected_gdays = set(self.lof_gdays)
+        self.selected_gstudents = set(self.lof_gstudents)
+        # smazani widgetu
+        self.slt_delete_days()
+        self.slt_delete_student()
+
+        self.subject_list_clear.emit()
+        del self._model
+        self._model = model
+        
+        # aktualizace zavislosti na novy sort model
+        self.table_view.model().sourceModel().base_model = self._model
+        self._subject_model.base_model = self._model
+        self._model.sort_toggle.connect(self.sort_button.sort_button_update)
+
     
     # slots  
     @Slot()
     def slt_new_project(self):
-        # TODO:
-        self.selected_gdays = set(self.lof_gdays)
-        self.selected_gstudents = set(self.lof_gstudents)
-        self.slt_delete_days()
-        self.slt_delete_student()
-        self.subject_list_updated.emit(self._model.subjects)
-        del self._model
-        self._model = sort_lib.sort.Sort()
+        self.init_new_project(sort_lib.sort.Sort())
+
 
     @Slot()
     def slt_delete_student(self) -> None:
@@ -305,6 +341,7 @@ class GMainWindow(QMainWindow):
         self.status_bar.showMessage('Mažu studenty')
         list(map(lambda x: x.delete_gstudent(), self.selected_gstudents))
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
+
 
     @Slot()
     def slt_open_file(self) -> None:
@@ -326,31 +363,18 @@ class GMainWindow(QMainWindow):
             msg_box.setText('Nelze otevřít soubor\nSoubor je buďto poškozený, nebo nesplňuje formát.')
             msg_box.exec()
             return
-        
-        # smazani dosavadniho model a vytvoreni noveho
-        self.selected_gdays = set(self.lof_gdays)
-        self.selected_gstudents = set(self.lof_gstudents)
-        self.slt_delete_days()
-        self.slt_delete_student()
-        self.lof_gdays.clear()
-        self.lof_gstudents.clear()
-        self.subject_list_updated.emit(self._model.subjects)
 
+        # TODO: TEST IT
+        self.init_new_project(model)
+        
         # pridani dat
         self._model = model
-        for student in self._model.students:
-            gstudent = GStudent(student, self.student_frame.layout(), self)
-            gstudent.required_subjects_changed.connect(self.table_view.subject_counter_changed)
-            self.data_updated.connect(gstudent.update_content)
-            self.lof_gstudents.append(gstudent)
+        list(map(lambda x: self.create_gstudent(x), self._model.students))
+        list(map(lambda x: self.create_gday(x), self._model.days))
 
-        for day in self._model.days:
-            gday = GDay(day, self.days_scrollarea.widget().layout(), self)
-
-            self.filter_btn.toggled.connect(gday.filter_toggle)
-            self.lof_gdays.append(gday)
         self.view_updated.emit()
-        self.subject_list_updated.emit(self._model.subjects)
+        self.subject_list_updated.emit(self._model.subjects.keys())
+        # TODO: self.subject_counter_changed.emit()
         self.sort_button.sort_button_update(True)
         # TODO: subjects
         
@@ -456,17 +480,13 @@ class GMainWindow(QMainWindow):
         try:
             new_ids = self.model.load_file_students(filename)
             new_students = [student for student in self.model.students if student.id in new_ids]
-            for student in new_students:
-                gstudent = GStudent(student, self.student_frame.layout(), self)
-                self.data_updated.connect(gstudent.update_content)
-                gstudent.required_subjects_changed.connect(self.table_view.subject_counter_changed)
-                self.lof_gstudents.append(gstudent)
+            list(map(lambda x: self.create_gstudent(x), new_students))
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('Chyba při načítání studentů\nVybraný soubor nesplňuje formát pro načtění studentů')
+            msg_box.setText('Chyba při načítání studentů\nVybraný soubor nesplňuje formát pro načtění studentů')
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
@@ -494,10 +514,7 @@ class GMainWindow(QMainWindow):
         """Slot prida vygeneruje novy den"""
         self.status_bar.showMessage('Přidávám novýho den')
         new_day = self.model.add_day()
-        gday = GDay(new_day, self.days_scrollarea.widget().layout(), self)
-
-        self.filter_btn.toggled.connect(gday.filter_toggle)
-        self.lof_gdays.append(gday)
+        self.create_gday(new_day)
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 

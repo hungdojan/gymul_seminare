@@ -63,7 +63,7 @@ class Sort(QObject):
         # Seznam dnu
         self.__days = []
         # Seznam predmetu
-        self.__subjects = set()
+        self.__subjects = {}
         self._is_sorted = False
     
 
@@ -78,8 +78,8 @@ class Sort(QObject):
 
 
     @property
-    def subjects(self) -> tuple:
-        return tuple(sorted(self.__subjects))
+    def subjects(self) -> dict:
+        return self.__subjects
 
     
     @property
@@ -129,10 +129,9 @@ class Sort(QObject):
         Args:
             name (str): Jmeno predmetu.
         """
-        if name is None:
+        if name is None or name in self.__subjects.keys():
             return
-        self.__subjects.add(name, self)
-        self.set_sorted(False)
+        self.__subjects[name] = []
     
 
     def remove_subject(self, name: str) -> None:
@@ -141,11 +140,13 @@ class Sort(QObject):
         Args:
             name (str): Jmeno predmetu.
         """
-        if name not in self.__subjects:
+        if self.__subjects.get(name) is None:
             return
         self.set_sorted(False)
+        self.notify_students(name)
+
         list(map(lambda x: x.remove_subject(name), self.__days))
-        self.__subjects.discard(name)
+        del self.__subjects[name]
     
 
     def add_student(self, student: Student) -> bool:
@@ -181,20 +182,32 @@ class Sort(QObject):
         self.set_sorted(False)
         found_students[0].clear_data()
         self.__students = [student for student in self.__students if student.id != student_id]
+    
+
+    def attach_student(self, student: Student, subject_name: str):
+        if subject_name is None:
+            return
+        if self.__subjects.get(subject_name) is None:
+            self.__subjects[subject_name] = []
+        self.__subjects[subject_name].append(student)
+    
+
+    def detach_student(self, student: Student, subject_name: str):
+        if subject_name is None or self.__subjects.get(subject_name) is None:
+            return
+        try:
+            self.__subjects[subject_name].remove(student)
+        except:
+            pass
 
 
-    def get_students_per_subject(self) -> dict:
-        """Vraci statistiku a poctu studentu na predmet.
-
-        Returns:
-            dict: Vypocitana statistika.
-        """
-        d = {}
-        for subj in self.__subjects:
-            d[subj] = len([student for student in self.__students if subj in student.required_subjects])
-        return d
-
-
+    def notify_students(self, subject_name: str):
+        if self.__subjects.get(subject_name) is None:
+            return
+        for i in range(len(self.__subjects[subject_name]) - 1, -1, -1):
+            self.__subjects[subject_name][i].receive_msg(subject_name)
+            
+    
     def load_file_students(self, path: str) -> list:
         """Nacte seznam studentu ze .csv souboru.
 
@@ -283,8 +296,8 @@ class Sort(QObject):
 
                 # kontrola, zda neexistuje se stejnym jmenem
                 # pokud predmet existuje, je preskocen
-                if len([subject for subject in self.__subjects if subject == data[0]]) < 1:
-                    self.__subjects.add(data[0])
+                if self.__subjects.get(data[0]) is None:
+                    self.__subjects[data[0]] = []
                     new_subjs.append(data[0])
 
         return new_subjs 
@@ -401,7 +414,7 @@ class Sort(QObject):
             
         # seznam predmetu
         main_obj['subjects'] = QJsonArray()
-        list(map(lambda x: main_obj['subjects'].push_back(x), sorted(self.__subjects)))
+        list(map(lambda x: main_obj['subjects'].push_back(x), sorted(self.__subjects.keys())))
 
         json_doc = QJsonDocument()
         json_doc.setObject(main_obj)
