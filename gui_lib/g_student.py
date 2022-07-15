@@ -200,7 +200,7 @@ class GStudent(QWidget):
     @Slot()
     def delete_gstudent(self) -> None:
         """Mazani tohoto studenta z programu"""
-        # TODO: disconnect connections
+        self._base_gparent.data_updated.disconnect(self.update_content)
         self._base_gparent.model.remove_student(self.model.id)
         self._base_gparent.lof_gstudents.remove(self)
         self.setParent(None)
@@ -216,10 +216,10 @@ class GStudent(QWidget):
             return
 
         _index = self.subjects_cb.index(cb)
-        # if self._model.required_subjects[_index] is None 
         if self._model.required_subjects[_index] == cb.currentText():
             return
-        current_comb = tuple([cb.currentText() if cb.currentText() != '-' else None for cb in self.subjects_cb])
+        current_comb = tuple([cb.currentText() if cb.currentText() != '-' else None 
+                              for cb in self.subjects_cb])
         self._model.required_subjects = current_comb
         self._base_gparent.view_updated.emit()
         self.required_subjects_changed.emit()

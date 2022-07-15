@@ -13,10 +13,12 @@ class GDay(QFrame):
         self._model = model
         self._base_gparent = base_gparent
         # Seznam bunek g-predmetu
-        self.gsubjects = []
+        self.gsubjects: dict[str, GSubject] = {}
         # Stav usporadani predmetu
         self._highlight_filter = False
         self.setProperty('isSelected', False)
+
+        self._base_gparent.subject_list_updated.connect(self.update_list)
 
         # vygenerovani celeho widgetu a vlozeni do programu
         self._setupUI()
@@ -39,7 +41,7 @@ class GDay(QFrame):
         for i in range(len(sorted_subjects)):
             subj = GSubject(sorted_subjects[i], self,
                             self._model.get_subject(sorted_subjects[i]))
-            self.gsubjects.append(subj)
+            self.gsubjects[sorted_subjects[i]] = subj
 
             # pripojeni signalu a slotu
             self._base_gparent.data_updated.connect(subj.content_update)
@@ -61,7 +63,10 @@ class GDay(QFrame):
 
     def delete_gday(self):
         """Smaze den z programu."""
-        # TODO: disconnect connections
+        list(map(lambda subj: self._base_gparent.data_updated.disconnect(subj.content_update), list(self.gsubjects.values())))
+        
+        self._base_gparent.subject_list_updated.disconnect(self.update_list)
+
         self._base_gparent.model.remove_day(self.model)
         self._base_gparent.lof_gdays.remove(self)
         self.setParent(None)
@@ -80,24 +85,24 @@ class GDay(QFrame):
         super().paintEvent(event)
     
 
-    # TODO: create connection with **subject_list_updated** and **subject_list_clear**
+    @Slot(list)
+    def update_list(self, l: list) -> None:
+        for name in l:
+            # odstani predmet
+            if self.gsubjects.get(name) is not None:
+                self._base_gparent.data_updated.disconnect(self.gsubjects[name].content_update)
+                self.gsubjects[name].selected_subjects_changed.disconnect(self.update_layout)
 
-    @Slot()
-    def update_subjects(self):
-        # seznam predmetu
-        subjects = self._base_gparent.model.subjects.keys()
-        gsubj_names = [gsubject.name for gsubject in self.gsubjects]
-        removed_subjects = [gsubject for gsubject in self.gsubjects if gsubject.name not in subjects]
-        new_subjects = [name for name in subjects if name not in gsubj_names]
+                self.gsubjects[name].setParent(None)
+                del self.gsubjects[name]
+            # prida predmet
+            else:
+                gsubject = GSubject(name, self, self._model.get_subject(name))
 
-        # smazat stare predmety
-        for gsubj in removed_subjects:
-            gsubj.setParent(None)
-            self.gsubjects.remove(gsubj)
+                self._base_gparent.data_updated.connect(gsubject.content_update)
+                gsubject.selected_subjects_changed.connect(self.update_layout)
 
-        # nacist nove predmety
-        for subj in new_subjects:
-            self.gsubjects.append(GSubject(subj, self, self._model.get_subject(subj)))
+                self.gsubjects[name] = gsubject
         self.update_layout()
 
 
@@ -105,12 +110,12 @@ class GDay(QFrame):
     def update_layout(self):
         """Preusporada predmety podle stavu."""
         # zobrazi na zacatku tabulky oznacene predmety
+        list(map(lambda x: x.setParent(None), list(self.gsubjects.values())))
         if self._highlight_filter:
             # funkce odstrani vsechny g-predmety a pote je vsechny zpatky vlozi
-            list(map(lambda x: x.setParent(None), self.gsubjects))
-            selected = sorted([gsubj for gsubj in self.gsubjects 
+            selected = sorted([gsubj for gsubj in list(self.gsubjects.values()) 
                                if gsubj.property('isSelected')], key=lambda x: x.name)
-            not_selected = sorted([gsubj for gsubj in self.gsubjects 
+            not_selected = sorted([gsubj for gsubj in list(self.gsubjects.values()) 
                                    if not gsubj.property('isSelected')], key=lambda x: x.name)
 
             for i in range(len(self.gsubjects)):
@@ -121,8 +126,7 @@ class GDay(QFrame):
                 else:
                     self.layout().addWidget(not_selected[i - len(selected)], i // self.WIDTH, i % self.WIDTH)
         else:
-            list(map(lambda x: x.setParent(None), self.gsubjects))
-            subjects = sorted([gsubj for gsubj in self.gsubjects], key=lambda x: x.name)
+            subjects = sorted(list(self.gsubjects.values()), key=lambda x: x.name)
             for i in range(len(subjects)):
                 self.layout().addWidget(subjects[i], i // self.WIDTH, i % self.WIDTH)
     

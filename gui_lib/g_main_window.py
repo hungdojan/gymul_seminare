@@ -312,7 +312,6 @@ class GMainWindow(QMainWindow):
 
     def init_new_project(self, model: sort_lib.sort.Sort):
         # odpojeni starych widgetu
-        self.data_updated.disconnect()
         self.selected_gdays = set(self.lof_gdays)
         self.selected_gstudents = set(self.lof_gstudents)
         # smazani widgetu
