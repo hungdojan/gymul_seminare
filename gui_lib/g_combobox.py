@@ -18,7 +18,8 @@ class GComboBox(QComboBox):
         self.lineEdit().setReadOnly(True)
 
         # nastaveni dat
-        self.setModel(self._base_gparent._base_gparent.subject_model)
+        #                       GStudent.GStudentPanel.GMainWindow
+        self.setModel(self._base_gparent._base_gparent._base_gparent.subject_model)
         self.update_view()
     
 

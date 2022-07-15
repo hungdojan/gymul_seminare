@@ -58,7 +58,9 @@ class Subject:
 
     def clear_data(self) -> None:
         """Vymaze seznam studentu zapsanych v danem predmetu."""
-        list(map(lambda x: x.clear_data(), reversed(self.__students)))
+        for i in range(len(self.__students)-1, -1, -1):
+            self.__students[i].is_locked = False
+            self.__students[i].required_subjects = self.__students[i].required_subjects
 
     
     def get_qjson(self) -> dict:

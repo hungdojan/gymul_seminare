@@ -2,7 +2,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut
 from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
 
-from gui_lib.g_student import GStudent
+from gui_lib.g_student_panel import GStudentPanel
 from gui_lib.g_day import GDay
 from gui_lib.g_constants import StudentStatus
 from gui_lib.g_about_dialog import GAboutDialog
@@ -14,7 +14,6 @@ from gui_lib.subject_model import SubjectModel
 import rc
 from sort_lib.day import Day
 import sort_lib.sort
-from sort_lib.student import Student
 
 class GMainWindow(QMainWindow):
     """Trida reprezentujici hlavni okno programu."""
@@ -37,8 +36,6 @@ class GMainWindow(QMainWindow):
         self._model = model
         # list g-dnu
         self.lof_gdays = []
-        # list g-studentu
-        self.lof_gstudents = []
         # model predmetu
         self._subject_model = SubjectModel(self._model)
         self.subject_list_updated.connect(self._subject_model.update_list)
@@ -148,26 +145,9 @@ class GMainWindow(QMainWindow):
 
 
     def _setup_student_panel(self) -> None:
-        # skrolovaci plocha
-        lof_students_scrar = QScrollArea(self)
-        lof_students_scrar.setMinimumWidth(500)
-        lof_students_scrar.setLineWidth(2)
-        lof_students_scrar.setFrameShape(QFrame.Shape.Box)
-        lof_students_scrar.setFrameShadow(QFrame.Shadow.Plain)
 
-        # koren skrolovaci plochy
-        self.student_frame = QFrame(lof_students_scrar)
-        self.student_frame.setLayout(QVBoxLayout())
-        # rozvrzeni skrolovaci plochy
-        self.student_frame.layout().setContentsMargins(3, 3, 3, 3)
-        self.student_frame.layout().setSpacing(3)
-        self.student_frame.layout().addStretch()
-
-        # self.student_frame.setLayout(self.student_vbox)
-        lof_students_scrar.setWidgetResizable(True)
-        lof_students_scrar.setWidget(self.student_frame)
-        # vlozeni do hlavni plochy
-        self.main_grid_layout.addWidget(lof_students_scrar, 1, 0, 3, 2)
+        self.student_panel = GStudentPanel(self)
+        self.main_grid_layout.addWidget(self.student_panel, 1, 0, 3, 2)
 
         # hlavicka sekce
         self.main_grid_layout.addWidget(QLabel("Studenti"), 0, 0)
@@ -185,12 +165,12 @@ class GMainWindow(QMainWindow):
             self.buttons[btn].setCheckable(True)
             self.buttons[btn].setChecked(True)
             self.buttons[btn].setAutoFillBackground(True)
-            self.buttons[btn].toggled.connect(self.filter_students)
+            self.buttons[btn].toggled.connect(self.student_panel.filter_students)
             student_filter_widget.layout().addWidget(self.buttons[btn])
         self.main_grid_layout.addWidget(student_filter_widget, 0, 1)
 
         # pridani studentu z modelu
-        list(map(lambda x: self.create_gstudent(x), self._model.students))
+        list(map(lambda x: self.student_panel.add_gstudent(x), self._model.students))
     
 
     def _setup_day_panel(self) -> None:
@@ -252,17 +232,6 @@ class GMainWindow(QMainWindow):
         self.setStyleSheet(style)
     
 
-    def create_gstudent(self, student: Student) -> GStudent:
-        gstudent = GStudent(student, self.student_frame.layout(), self)
-
-        # pripojeni signalu a slotu
-        gstudent.required_subjects_changed.connect(self.table_view.model().sourceModel().update_model_counter)
-        self.data_updated.connect(gstudent.update_content)
-
-        self.lof_gstudents.append(gstudent)
-        return gstudent
-    
-
     def create_gday(self, day: Day) -> GDay:
         gday = GDay(day, self.days_scrollarea.widget().layout(), self)
 
@@ -270,19 +239,6 @@ class GMainWindow(QMainWindow):
         self.lof_gdays.append(gday)
         return gday
 
-
-    def select_student(self, gstudent: 'GStudent', status: bool):
-        """Spravuje oznacene GStudenty
-
-        Args:
-            gstudent (GStudent): Instance GStudent, ktereho se Všechny operace tyka
-            status (bool): Pravdivostni hodnota, zda byl objekt oznacen ci ne
-        """
-        if status:
-            self.selected_gstudents.add(gstudent)
-        else:
-            self.selected_gstudents.discard(gstudent)
-    
 
     def select_day(self, gday: 'GDay', status: bool):
         """Spravuje oznacene GDny
@@ -313,10 +269,9 @@ class GMainWindow(QMainWindow):
     def init_new_project(self, model: sort_lib.sort.Sort):
         # odpojeni starych widgetu
         self.selected_gdays = set(self.lof_gdays)
-        self.selected_gstudents = set(self.lof_gstudents)
-        # smazani widgetu
+        # # smazani widgetu
         self.slt_delete_days()
-        self.slt_delete_student()
+        self.student_panel.clear()
 
         self.subject_list_clear.emit()
         del self._model
@@ -368,7 +323,7 @@ class GMainWindow(QMainWindow):
         
         # pridani dat
         self._model = model
-        list(map(lambda x: self.create_gstudent(x), self._model.students))
+        list(map(lambda x: self.student_panel.add_gstudent(x), self._model.students))
         list(map(lambda x: self.create_gday(x), self._model.days))
 
         self.view_updated.emit()
@@ -479,7 +434,7 @@ class GMainWindow(QMainWindow):
         try:
             new_ids = self.model.load_file_students(filename)
             new_students = [student for student in self.model.students if student.id in new_ids]
-            list(map(lambda x: self.create_gstudent(x), new_students))
+            list(map(lambda x: self.student_panel.add_gstudent(x), new_students))
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
@@ -529,23 +484,23 @@ class GMainWindow(QMainWindow):
     def slt_help(self) -> None:
         """Slot otevre okno s napovedou"""
         self.status_bar.showMessage('Otevírám okno s nápovědou')
-        GHelpDialog(self)
+        GHelpDialog(self).show()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
+
 
     @Slot()
     def slt_about(self) -> None:
         """Slot otevre okno s informacemi o aplikaci"""
         self.status_bar.showMessage('Otevírám okno s informacemi o aplikaci')
-        GAboutDialog(self)
+        GAboutDialog(self).show()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
+
 
     @Slot()
     def slt_sort(self) -> None:
         """Slot provede setrizeni dat"""
         self.status_bar.showMessage('Provádím třídění studentů')
         self.model.sort_data()
-        for student in self.lof_gstudents:
-            student.update_content()
         self.view_updated.emit()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
@@ -553,33 +508,4 @@ class GMainWindow(QMainWindow):
     @Slot()
     def view_update(self):
         self.data_updated.emit()
-        self.filter_students()
-    
-
-    @Slot()
-    def filter_students(self) -> None:
-        """Slot provadi filtraci studentu podle jejich statusu"""
-        self.status_bar.showMessage('Provádím filtraci studentů')
-        # red
-        red_students = [gstudent for gstudent in self.lof_gstudents
-                        if gstudent.get_status() == StudentStatus.NO_COMB]
-        list(map(lambda x: x.setVisible(self.buttons['red'].isChecked()), red_students))
-
-        # yellow
-        yellow_students = [gstudent for gstudent in self.lof_gstudents
-                           if gstudent.get_status() == StudentStatus.MUL_COMB]
-        list(map(lambda x: x.setVisible(self.buttons['yellow'].isChecked()), yellow_students))
-
-        # blue-ish
-        blueish_students = [gstudent for gstudent in self.lof_gstudents
-                            if gstudent.get_status() == StudentStatus.MUL_SET]
-        list(map(lambda x: x.setVisible(self.buttons['blue-ish'].isChecked()), blueish_students))
-
-        # green
-        green_students = [gstudent for gstudent in self.lof_gstudents
-                          if gstudent.get_status() == StudentStatus.ONLY_ONE]
-        list(map(lambda x: x.setVisible(self.buttons['green'].isChecked()), green_students))
-
-        for btn in self.buttons:
-            self.buttons[btn].setText('ON' if self.buttons[btn].isChecked() else 'OFF')
-        self.status_bar.showMessage('Všechny operace dokončené', 6000)
+        self.student_panel.filter_students()

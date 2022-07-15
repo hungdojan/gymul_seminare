@@ -13,7 +13,6 @@ class GAboutDialog(QDialog):
 
         self.setLayout(QVBoxLayout())
         self._setupUI()
-        self.show()
     
 
     def _setupUI(self):

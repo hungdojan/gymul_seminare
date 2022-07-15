@@ -25,5 +25,4 @@ class GHelpDialog(QDialog):
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(0,0,0,0)
         self.layout().addWidget(content_tb)
-        self.show()
 

@@ -3,17 +3,19 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import Slot, Qt, Signal, QPoint
 from PySide6.QtGui import QMouseEvent, QPaintEvent, QPainter, QFont, QAction
 import gui_lib.g_main_window
+import gui_lib.g_student_panel
 from gui_lib.g_combobox import GComboBox
 from gui_lib.g_constants import StudentStatus
 from gui_lib.g_edit_student_dialog import GEditStudentDialog
 from gui_lib.g_combination_dialog import GCombinationDialog
+
 
 class GStudent(QWidget):
 
     # Signal se vysle, pokud se aktualizuje seznam pozadovanych predmetu studenta
     required_subjects_changed = Signal()
 
-    def __init__(self, model: Student, base_layout: QBoxLayout, base_gparent: 'gui_lib.g_main_window.GMainWindow'):
+    def __init__(self, model: Student, base_gparent: 'gui_lib.g_student_panel.GStudentPanel'):
         super().__init__()
         self._model = model
         self._base_gparent = base_gparent
@@ -26,9 +28,6 @@ class GStudent(QWidget):
         self.setProperty('status', StudentStatus.NO_COMB)
         self.setProperty('isSelected', False)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-
-        # vlozeni do rozlozeni
-        base_layout.insertWidget(base_layout.count() - 1, self)
     
 
     @property
@@ -90,7 +89,7 @@ class GStudent(QWidget):
         if a0.button() == Qt.MouseButton.MiddleButton:
             # uzamceni studenta
             self.setProperty('isSelected', not self.property('isSelected'))
-            self._base_gparent.select_student(self, self.property('isSelected'))
+            self._base_gparent.select_gstudent(self, self.property('isSelected'))
             self.update_style()
         elif a0.button() == Qt.MouseButton.LeftButton:
             # vyber kombinaci
@@ -200,10 +199,7 @@ class GStudent(QWidget):
     @Slot()
     def delete_gstudent(self) -> None:
         """Mazani tohoto studenta z programu"""
-        self._base_gparent.data_updated.disconnect(self.update_content)
-        self._base_gparent.model.remove_student(self.model.id)
-        self._base_gparent.lof_gstudents.remove(self)
-        self.setParent(None)
+        self._base_gparent.delete_gstudent(self)
     
 
     @Slot(int)
@@ -221,7 +217,7 @@ class GStudent(QWidget):
         current_comb = tuple([cb.currentText() if cb.currentText() != '-' else None 
                               for cb in self.subjects_cb])
         self._model.required_subjects = current_comb
-        self._base_gparent.view_updated.emit()
+        self._base_gparent._base_gparent.view_updated.emit()
         self.required_subjects_changed.emit()
     
 
