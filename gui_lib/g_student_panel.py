@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QScrollArea, QVBoxLayout, QFrame
-from PySide6.QtCore import Slot, Qt
+from PySide6.QtCore import Slot
 
 from gui_lib.g_student import GStudent
 import gui_lib.g_main_window
@@ -107,6 +107,7 @@ class GStudentPanel(QScrollArea):
         """Vymaze oznacene studenty."""
         self._base_gparent.status_bar.showMessage('Mažu studenty')
         list(map(lambda x: self.delete_gstudent(x), self.selected_gstudents))
+        self.selected_students.clear()
         self._base_gparent.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 
@@ -117,23 +118,23 @@ class GStudentPanel(QScrollArea):
         # red
         red_students = [gstudent for gstudent in self.lof_gstudents
                         if gstudent.get_status() == StudentStatus.NO_COMB]
-        list(map(lambda x: x.setVisible(self._base_gparent.buttons['red'].isChecked()), red_students))
+        list(map(lambda x: x.setVisible(self._base_gparent.student_buttons['red'].isChecked()), red_students))
 
         # yellow
         yellow_students = [gstudent for gstudent in self.lof_gstudents
                            if gstudent.get_status() == StudentStatus.MUL_COMB]
-        list(map(lambda x: x.setVisible(self._base_gparent.buttons['yellow'].isChecked()), yellow_students))
+        list(map(lambda x: x.setVisible(self._base_gparent.student_buttons['yellow'].isChecked()), yellow_students))
 
         # blue-ish
         blueish_students = [gstudent for gstudent in self.lof_gstudents
                             if gstudent.get_status() == StudentStatus.MUL_SET]
-        list(map(lambda x: x.setVisible(self._base_gparent.buttons['blue-ish'].isChecked()), blueish_students))
+        list(map(lambda x: x.setVisible(self._base_gparent.student_buttons['blue-ish'].isChecked()), blueish_students))
 
         # green
         green_students = [gstudent for gstudent in self.lof_gstudents
                           if gstudent.get_status() == StudentStatus.ONLY_ONE]
-        list(map(lambda x: x.setVisible(self._base_gparent.buttons['green'].isChecked()), green_students))
+        list(map(lambda x: x.setVisible(self._base_gparent.student_buttons['green'].isChecked()), green_students))
 
-        for btn in self._base_gparent.buttons:
-            self._base_gparent.buttons[btn].setText('ON' if self._base_gparent.buttons[btn].isChecked() else 'OFF')
+        for btn in self._base_gparent.student_buttons:
+            self._base_gparent.student_buttons[btn].setText('ON' if self._base_gparent.student_buttons[btn].isChecked() else 'OFF')
         self._base_gparent.status_bar.showMessage('Všechny operace dokončené', 6000)

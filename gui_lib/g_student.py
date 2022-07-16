@@ -111,7 +111,6 @@ class GStudent(QWidget):
         super().paintEvent(event)
 
 
-    @Slot()
     def update_style(self):
         """Aktualizuje vzhled GStudent"""
         self.lock_lbl.style().unpolish(self.lock_lbl)

@@ -1,10 +1,9 @@
 from PySide6.QtWidgets import *
 from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut
 from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
+from gui_lib.g_day_panel import GDayPanel
 
 from gui_lib.g_student_panel import GStudentPanel
-from gui_lib.g_day import GDay
-from gui_lib.g_constants import StudentStatus
 from gui_lib.g_about_dialog import GAboutDialog
 from gui_lib.g_help_dialog import GHelpDialog
 from gui_lib.g_subject_table_view import GSubjectTableView
@@ -153,7 +152,7 @@ class GMainWindow(QMainWindow):
         self.main_grid_layout.addWidget(QLabel("Studenti"), 0, 0)
 
         # filtrovaci tlacitka
-        self.buttons = {
+        self.student_buttons = {
             'red': QPushButton('ON', objectName='FailedButton'),
             'yellow': QPushButton('ON', objectName='MultipleButton'),
             'green': QPushButton('ON', objectName='SuccessButton'),
@@ -161,12 +160,11 @@ class GMainWindow(QMainWindow):
         }
         student_filter_widget = QWidget()
         student_filter_widget.setLayout(QHBoxLayout())
-        for btn in self.buttons:
-            self.buttons[btn].setCheckable(True)
-            self.buttons[btn].setChecked(True)
-            self.buttons[btn].setAutoFillBackground(True)
-            self.buttons[btn].toggled.connect(self.student_panel.filter_students)
-            student_filter_widget.layout().addWidget(self.buttons[btn])
+        for btn in self.student_buttons:
+            self.student_buttons[btn].setCheckable(True)
+            self.student_buttons[btn].setChecked(True)
+            self.student_buttons[btn].toggled.connect(self.student_panel.filter_students)
+            student_filter_widget.layout().addWidget(self.student_buttons[btn])
         self.main_grid_layout.addWidget(student_filter_widget, 0, 1)
 
         # pridani studentu z modelu
@@ -175,11 +173,7 @@ class GMainWindow(QMainWindow):
 
     def _setup_day_panel(self) -> None:
         # hlavni plocha s moznosti skrolovat
-        self.days_scrollarea = QScrollArea()
-        self.days_scrollarea.setWidgetResizable(True)
-        self.days_scrollarea.setWidget(QFrame())
-        self.days_scrollarea.widget().setLayout(QVBoxLayout())
-        self.days_scrollarea.widget().layout().addStretch()
+        self.day_panel = GDayPanel(self)
 
         # nazev useku
         self.main_grid_layout.addWidget(QLabel('Dny'), 0, 2)
@@ -187,25 +181,24 @@ class GMainWindow(QMainWindow):
         # pracovni plocha pro operace se dny (pridani, mazani, filtrace)
         day_buttons_widget = QWidget()
         day_buttons_widget.setLayout(QHBoxLayout())
-        add_btn = QPushButton('ADD')
-        add_btn.clicked.connect(self.slt_add_day)
-        self.filter_btn = QPushButton('FILTER')
-        self.filter_btn.setCheckable(True)
-        delete_btn = QPushButton('DELETE')
-        delete_btn.clicked.connect(self.slt_delete_days)
-        day_buttons_widget.layout().addWidget(add_btn)
-        day_buttons_widget.layout().addWidget(self.filter_btn)
-        day_buttons_widget.layout().addWidget(delete_btn)
+        self.day_buttons = {
+            'add': QPushButton('Přidat'),
+            'filter': QPushButton('Filtr'),
+            'delete': QPushButton('Odebrat')
+        }
+        self.day_buttons['add'].clicked.connect(self.slt_add_day)
+        self.day_buttons['filter'].setCheckable(True)
+        self.day_buttons['delete'].clicked.connect(self.day_panel.delete_selected)
+
+        day_buttons_widget.layout().addWidget(self.day_buttons['add'])
+        day_buttons_widget.layout().addWidget(self.day_buttons['filter'])
+        day_buttons_widget.layout().addWidget(self.day_buttons['delete'])
         self.main_grid_layout.addWidget(day_buttons_widget, 0, 3)
 
-        # pracovni plocha se dny
-        self.day_widget = QWidget()
-        self.day_widget.setLayout(QVBoxLayout())
-
         # pridani dnu z modelu
-        list(map(lambda x: self.create_gday(x), self._model.days))
+        list(map(lambda x: self.day_panel.add_gday(x), self._model.days))
 
-        self.main_grid_layout.addWidget(self.days_scrollarea, 1, 2, 1, 2)
+        self.main_grid_layout.addWidget(self.day_panel, 1, 2, 1, 2)
     
 
     def _setup_subject_table_view(self) -> None:
@@ -232,27 +225,6 @@ class GMainWindow(QMainWindow):
         self.setStyleSheet(style)
     
 
-    def create_gday(self, day: Day) -> GDay:
-        gday = GDay(day, self.days_scrollarea.widget().layout(), self)
-
-        self.filter_btn.toggled.connect(gday.filter_toggle)
-        self.lof_gdays.append(gday)
-        return gday
-
-
-    def select_day(self, gday: 'GDay', status: bool):
-        """Spravuje oznacene GDny
-
-        Args:
-            gstudent (GStudent): Instance GDay, ktereho se Všechny operace tyka
-            status (bool): Pravdivostni hodnota, zda byl objekt oznacen ci ne
-        """
-        if status:
-            self.selected_gdays.add(gday)
-        else:
-            self.selected_gdays.discard(gday)
-
-
     def paintEvent(self, event: QPaintEvent) -> None:
         """Predefinuje funkci paintEvent
 
@@ -267,11 +239,9 @@ class GMainWindow(QMainWindow):
 
 
     def init_new_project(self, model: sort_lib.sort.Sort):
-        # odpojeni starych widgetu
-        self.selected_gdays = set(self.lof_gdays)
-        # # smazani widgetu
-        self.slt_delete_days()
+        # odpojeni a smazani starych widgetu
         self.student_panel.clear()
+        self.day_panel.clear()
 
         self.subject_list_clear.emit()
         del self._model
@@ -453,14 +423,6 @@ class GMainWindow(QMainWindow):
         # TODO: ask to save progress
         self.status_bar.showMessage('Zavírám aplikaci')
         self.close()
-    
-
-    @Slot()
-    def slt_add_student(self) -> None:
-        # TODO:
-        self.status_bar.showMessage('Přidávám nového studenta')
-        print('add student')
-        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
     
     @Slot()
@@ -468,18 +430,10 @@ class GMainWindow(QMainWindow):
         """Slot prida vygeneruje novy den"""
         self.status_bar.showMessage('Přidávám novýho den')
         new_day = self.model.add_day()
-        self.create_gday(new_day)
+        self.day_panel.add_gday(new_day)
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 
-    @Slot()
-    def slt_delete_days(self) -> None:
-        """Slot smaze vybrane dny"""
-        self.status_bar.showMessage('Mažu vybrané dny')
-        list(map(lambda x: x.delete_gday(), self.selected_gdays))
-        self.status_bar.showMessage('Všechny operace dokončené', 6000)
-
-    
     @Slot()
     def slt_help(self) -> None:
         """Slot otevre okno s napovedou"""
