@@ -458,7 +458,8 @@ class Sort(QObject):
         
         # predmety
         subj_arr = main_obj['subjects']
-        model.__subjects = subj_arr
+        for name in subj_arr:
+            model.__subjects[name] = []
 
         # dny
         for day_index in sorted(main_obj['days']):

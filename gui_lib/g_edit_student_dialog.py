@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QDialog, QFormLayout, QLineEdit, QVBoxLayout, QWidget, QDialogButtonBox
+from PySide6.QtWidgets import QDialog, QFormLayout, QLineEdit, QVBoxLayout, QDialogButtonBox
 import gui_lib.g_student
 
 class GEditStudentDialog(QDialog):

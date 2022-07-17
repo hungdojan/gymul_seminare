@@ -86,7 +86,7 @@ class GDayPanel(QScrollArea):
         self._base_gparent.subject_list_updated.disconnect(gday.update_list)
         self._base_gparent.model.remove_day(gday.model)
         self.lof_gdays.remove(gday)
-        gday.setParent(None)
+        gday.deleteLater()
 
 
     @Slot()

@@ -9,9 +9,9 @@ from gui_lib.g_help_dialog import GHelpDialog
 from gui_lib.g_subject_table_view import GSubjectTableView
 from gui_lib.g_sort_button import GSortButton
 from gui_lib.subject_model import SubjectModel
+from gui_lib.g_subject_control_dialog import GSubjectControlDialog
 
 import rc
-from sort_lib.day import Day
 import sort_lib.sort
 
 class GMainWindow(QMainWindow):
@@ -120,24 +120,18 @@ class GMainWindow(QMainWindow):
         add_action('Načíst předměty', self.slt_import_subjects, file_menu)
         add_action('Načíst studenty', self.slt_import_students, file_menu)
         add_action('Exportovat data', self.slt_export, file_menu, 'Ctrl+E')
-
         file_menu.addSeparator()
         self.auto_refresh_action = file_menu.addAction('Auto-refresh')
         self.auto_refresh_action.setCheckable(True)
         file_menu.addSeparator()
         add_action('Zavřít', self.close, file_menu, 'Alt+F4')
 
-        # student menu
-        # TODO:
-        # edit_menu = self.menu_bar.addMenu('Upravit')
-        # add_action('Přidat studenta', self.slt_add_student, edit_menu)
-        # add_action('Smazat studenta', self.slt_delete_student, edit_menu)
-        # edit_menu.addSeparator()
+        # spravovat menu
+        control_menu = self.menu_bar.addMenu('Spravovat')
+        add_action('Spravovat studenty', self.slt_open_student_control, control_menu)
+        add_action('Spravovat předměty', self.slt_open_subject_control, control_menu)
 
-        view_menu = self.menu_bar.addMenu('Zobrazit')
-        todo = view_menu.addAction('TODO')
-        # TODO:
-
+        # napoveda menu
         help_menu = self.menu_bar.addMenu('Nápověda')
         add_action('Nápověda', self.slt_help, help_menu, 'F1')
         add_action('O apllikaci', self.slt_about, help_menu)
@@ -294,7 +288,7 @@ class GMainWindow(QMainWindow):
         # pridani dat
         self._model = model
         list(map(lambda x: self.student_panel.add_gstudent(x), self._model.students))
-        list(map(lambda x: self.create_gday(x), self._model.days))
+        list(map(lambda x: self.day_panel.add_gday(x), self._model.days))
 
         self.view_updated.emit()
         self.subject_list_updated.emit(self._model.subjects.keys())
@@ -314,9 +308,11 @@ class GMainWindow(QMainWindow):
         if not filename[0]:
             self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
             return
+        fname = filename[0] if filename[0].endswith('.json') \
+                            else f'{filename[0]}.json'
         try:
             content = self._model.save_to_json()
-            with open(filename[0], 'w') as f:
+            with open(fname, 'w') as f:
                 f.write(content)
         except sort_lib.sort.Sort.DataNotSortedException:
             # chybova hlaska pro nesetrizena data
@@ -431,6 +427,19 @@ class GMainWindow(QMainWindow):
         self.status_bar.showMessage('Přidávám novýho den')
         new_day = self.model.add_day()
         self.day_panel.add_gday(new_day)
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
+    
+
+    @Slot()
+    def slt_open_student_control(self):
+        print('open student control')
+        pass
+
+
+    @Slot()
+    def slt_open_subject_control(self):
+        self.status_bar.showMessage('Otevírám okno s správou předmětů.')
+        GSubjectControlDialog(self).exec()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 

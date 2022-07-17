@@ -1,4 +1,3 @@
-from email.mime import base
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtCore import Slot, Qt, Signal
 from sort_lib.sort import Sort

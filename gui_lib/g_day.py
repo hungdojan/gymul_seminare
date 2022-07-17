@@ -95,7 +95,7 @@ class GDay(QFrame):
         gsubject.selected_subjects_changed.disconnect(self.update_layout)
         if gsubject.property('isSelected'):
             self._model.remove_subject(gsubject.name)
-        gsubject.setParent(None)
+        gsubject.deleteLater()
         del self.gsubjects[subject_name]
     
 
