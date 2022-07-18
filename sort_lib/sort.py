@@ -55,6 +55,7 @@ class Sort(QObject):
         pass
 
     sort_toggle = Signal(bool)
+    student_id_counter = 1
 
     def __init__(self):
         super().__init__()
@@ -68,22 +69,22 @@ class Sort(QObject):
     
 
     @property
-    def students(self) -> tuple:
+    def students(self) -> tuple[Student]:
         return tuple(self.__students)
 
 
     @property
-    def days(self) -> tuple:
+    def days(self) -> tuple[Day]:
         return tuple(self.__days)
 
 
     @property
-    def subjects(self) -> dict:
+    def subjects(self) -> dict[str, list[Student]]:
         return self.__subjects
 
     
     @property
-    def is_sorted(self):
+    def is_sorted(self) -> bool:
         return self._is_sorted
     
 
@@ -168,6 +169,20 @@ class Sort(QObject):
         self.__students.append(student)
         self.set_sorted(False)
         return True
+    
+
+    def get_student(self, student_id: str) -> Student:
+        """Vyhleda studenta podle ID a vraci jeho instanci.
+
+        Args:
+            student_id (str): Identifikacni hodnota studenta.
+
+        Returns:
+            Student: Nalezena instance studenta; None pokud nic nenasel.
+        """
+        student = [student for student in self.__students
+                   if student.id == student_id]
+        return student[0] if student else None
 
 
     def remove_student(self, student_id: str) -> None:
@@ -208,7 +223,7 @@ class Sort(QObject):
             self.__subjects[subject_name][i].receive_msg(subject_name)
             
     
-    def load_file_students(self, path: str) -> list:
+    def load_file_students(self, path: str) -> tuple[list[str], list[str]]:
         """Nacte seznam studentu ze .csv souboru.
 
         Args:
@@ -220,10 +235,11 @@ class Sort(QObject):
             Sort.FileContentFormatException: Obsah souboru nesouhlasi s ocekavanym formatem.
 
         Returns:
-            list: Seznam ID nove pridanych studentu.
+            tuple[list[str], list[str]]: Dvojice seznamu ID nove pridanych studentu a jmen novych predmetu.
         """
         # seznam ID novych studentu
         new_students_id = []
+        new_subjects = []
 
         # kontrola vybraneho souboru (zda existuje a ma spravnou koncovku)
         if path is None or not isinstance(path, str) or not os.path.isfile(path):
@@ -246,16 +262,22 @@ class Sort(QObject):
 
                 # kontrola, zda neexistuje student se stejnym id
                 # pokud student existuje, je preskocen
-                if len([student for student in self.__students if student.id == int(data[0])]) > 0:
+                if len([student for student in self.__students if student.id == data[0]]) > 0:
                     continue
+
+                # kontrola predmetu
+                for subj in data[4-len(data):]:
+                    if subj and self.__subjects.get(subj) is None:
+                        new_subjects.append(subj)
                 
                 # vlozi noveho studenta do seznamu studentu
                 self.__students.append(Student(
-                    data[0], data[1], data[2], data[3], tuple(data[4-len(data):]), self
+                    data[1], data[2], data[3], tuple(data[4-len(data):]), self, data[0]
                 ))
                 new_students_id.append(data[0])
+                __class__.student_id_counter += 1
         
-        return new_students_id 
+        return new_students_id, new_subjects 
 
 
     def load_file_subjects(self, path: str) -> list:
@@ -384,7 +406,7 @@ class Sort(QObject):
         # vypis seznamu zaku a jejich vybrane kombinace predmetu
         with open(os.path.join(dest_path, OUT_STUDENTS), 'w', encoding='utf-8') as f:
             for student in self.__students:
-                f.write(f'{student}\n')
+                f.write(f'{str(student)}\n')
 
 
     def save_to_json(self) -> str:
@@ -478,12 +500,12 @@ class Sort(QObject):
                 raise Sort.JsonFileCorruptedException('JSON error: expected Student object')
             model.__students.append(
                 Student(
-                    student_json['id'],
                     student_json['first_name'],
                     student_json['last_name'],
                     student_json['class_id'],
                     tuple(student_json['required_subjects']),
-                    model
+                    model,
+                    student_json['id']
                 )
             )
         

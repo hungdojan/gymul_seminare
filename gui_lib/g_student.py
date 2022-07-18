@@ -8,6 +8,7 @@ from gui_lib.g_combobox import GComboBox
 from gui_lib.g_constants import StudentStatus
 from gui_lib.g_edit_student_dialog import GEditStudentDialog
 from gui_lib.g_combination_dialog import GCombinationDialog
+import gui_lib.g_student_control_dialog
 
 
 class GStudent(QWidget):
@@ -126,12 +127,30 @@ class GStudent(QWidget):
         self.update()
 
 
+    def update_personal_data(self) -> None:
+        """Aktualizace dat studenta z backendu"""
+        self.first_name_lbl.setText(self.model.first_name)
+        self.last_name_lbl.setText(self.model.last_name)
+        self.class_id_lbl.setText(self.model.class_id)
+    
+
+    def load_from_model(self) -> None:
+        """Aktualizuje studentovy data z student modelu."""
+        self.update_personal_data()
+        for i in range(len(self.subjects_cb)):
+            text = self._model.required_subjects[i] if self._model.required_subjects[i] else '-'
+            index = self.subjects_cb[i].findText(text)
+            self.subjects_cb[i].setCurrentIndex(index)
+        self.update_content()
+    
+
     @Slot()
     def update_content(self) -> None:
         """Aktualizuje hodnotu 'status'"""
         # nastaveni barvy pozadi zaka
         if len(self.model.possible_comb) < 1:
             self.setProperty('status', StudentStatus.NO_COMB)
+            self.lock_trigger()
         elif len(self.model.possible_comb) > 0 and self.model.chosen_comb is None:
             self.setProperty('status', StudentStatus.MUL_COMB)
         elif len(self.model.possible_comb) > 1 and self.model.chosen_comb is not None:
@@ -178,7 +197,8 @@ class GStudent(QWidget):
     def lock_trigger(self) -> None:
         """Slot, ktery reaguje na prepnuti zamku"""
         action: QAction = self.sender()
-        self.model.is_locked = action.isChecked()
+        if isinstance(action, QAction):
+            self.model.is_locked = action.isChecked()
         if self.model.is_locked:
             self.lock_lbl.show()
             list(map(lambda x: x.setDisabled(True), self.subjects_cb))
@@ -188,16 +208,9 @@ class GStudent(QWidget):
     
 
     @Slot()
-    def update_personal_data(self) -> None:
-        """Aktualizace dat studenta z backendu"""
-        self.first_name_lbl.setText(self.model.first_name)
-        self.last_name_lbl.setText(self.model.last_name)
-        self.class_id_lbl.setText(self.model.class_id)
-    
-
-    @Slot()
     def delete_gstudent(self) -> None:
         """Mazani tohoto studenta z programu"""
+        gui_lib.g_student_control_dialog.GStudentControlDialog.delete_student_from_model(self._model.id)
         self._base_gparent.delete_gstudent(self)
     
 
@@ -218,10 +231,4 @@ class GStudent(QWidget):
         self._model.required_subjects = current_comb
         self._base_gparent._base_gparent.view_updated.emit()
         self.required_subjects_changed.emit()
-    
-
-    @Slot()
-    def update_model(self):
-        self.first_name_lbl.setText(self.model.first_name)
-        self.last_name_lbl.setText(self.model.last_name)
-        self.class_id_lbl.setText(self.model.class_id)
+        gui_lib.g_student_control_dialog.GStudentControlDialog.update_row(self._model)

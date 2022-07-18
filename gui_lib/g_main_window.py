@@ -10,6 +10,7 @@ from gui_lib.g_subject_table_view import GSubjectTableView
 from gui_lib.g_sort_button import GSortButton
 from gui_lib.subject_model import SubjectModel
 from gui_lib.g_subject_control_dialog import GSubjectControlDialog
+from gui_lib.g_student_control_dialog import GStudentControlDialog
 
 import rc
 import sort_lib.sort
@@ -240,6 +241,7 @@ class GMainWindow(QMainWindow):
         self.subject_list_clear.emit()
         del self._model
         self._model = model
+        sort_lib.sort.Sort.student_id_counter = 1
         
         # aktualizace zavislosti na novy sort model
         self.table_view.model().sourceModel().base_model = self._model
@@ -398,9 +400,13 @@ class GMainWindow(QMainWindow):
             return
         filename = dialog.selectedFiles()[0]
         try:
-            new_ids = self.model.load_file_students(filename)
+            new_ids, new_subjs = self.model.load_file_students(filename)
+            # nacteni novych predmetu
+            if len(new_subjs) > 0:
+                self.subject_list_updated.emit(new_subjs)
             new_students = [student for student in self.model.students if student.id in new_ids]
             list(map(lambda x: self.student_panel.add_gstudent(x), new_students))
+            list(map(lambda x: GStudentControlDialog.add_student_to_model(x), new_students))
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
@@ -432,14 +438,16 @@ class GMainWindow(QMainWindow):
 
     @Slot()
     def slt_open_student_control(self):
-        print('open student control')
-        pass
+        self.status_bar.showMessage('Otevírám okno s správou předmětů.')
+        GStudentControlDialog(self).exec()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
     @Slot()
     def slt_open_subject_control(self):
         self.status_bar.showMessage('Otevírám okno s správou předmětů.')
-        GSubjectControlDialog(self).exec()
+        if GSubjectControlDialog(self).exec():
+            self.view_updated.emit()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 

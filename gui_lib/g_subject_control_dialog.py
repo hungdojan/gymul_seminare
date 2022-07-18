@@ -15,6 +15,7 @@ class GSubjectControlDialog(QDialog):
         self._copy_model()
         self._changes: list[str] = []
         self._setupUI()
+        self.setWindowTitle('Správce předmětů')
 
     
     def _copy_model(self) -> None:

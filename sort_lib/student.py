@@ -12,8 +12,11 @@ class Student:
         """
         pass
 
-    def __init__(self, id: str, first_name: str, last_name: str, class_id: str,
-                 required_subjects: tuple, parent: 'sort_lib.sort.Sort'):
+    def __init__(self, first_name: str, last_name: str, class_id: str,
+                 required_subjects: tuple, parent: 'sort_lib.sort.Sort', id: str=None):
+        if id is None:
+            id = str(sort_lib.sort.Sort.student_id_counter)
+            sort_lib.sort.Sort.student_id_counter += 1
         # Identifikacni cislo studenta
         self.__id = id
         # Jmeno studenta
@@ -226,9 +229,20 @@ class Student:
         return obj
 
     
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         out_str = f'{self.__id},{self.__first_name},{self.__last_name},{self.__class_id}'
         if self.__chosen_comb is not None:
             for subj in self.chosen_comb:
                 out_str += f',{subj}'
+        return out_str
+    
+    def __repr__(self) -> str:
+        out_str = (f'ID:         {self.__id}\n'
+                   f'Jmeno:      {self.__first_name}\n'
+                   f'Prijmeni:   {self.__last_name}\n'
+                   f'Trida:      {self.__class_id}\n'
+                   f'Pozadovane: {self.__required_subjects}\n'
+                   f'Mozne:      {self.possible_comb}\n'
+                   f'Vybrano:    {self.chosen_comb}\n'
+                   f'Zamknuto:   {self._is_locked}')
         return out_str

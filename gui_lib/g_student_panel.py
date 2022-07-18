@@ -85,6 +85,30 @@ class GStudentPanel(QScrollArea):
         self.selected_students.clear()
     
 
+    def update_student(self, student_id: str):
+        """Aktualizuje data studenta.
+        
+        Args:
+            student_id (str): Identifikacni hodnota studenta.
+        """
+        gstudent = [gs for gs in self.lof_gstudents
+                    if gs.model.id == student_id]
+        if gstudent:
+            gstudent[0].load_from_model()
+    
+
+    def delete_student_id(self, student_id: str):
+        """Smaze studenta z modelu.
+
+        Args:
+            student_id (str): Identifikacni hodnota studenta.
+        """
+        gstudent = [gs for gs in self.lof_gstudents
+                    if gs.model.id == student_id]
+        if gstudent:
+            self.delete_gstudent(gstudent[0])
+
+
     @Slot()
     def delete_gstudent(self, gstudent: GStudent) -> None:
         """Smaze vybraneho studenta.
