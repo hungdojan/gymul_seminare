@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextBrowser
 from PySide6.QtCore import QFile, QIODevice, Qt
-import rc
+import gui_lib.rc
 
 class GHelpDialog(QDialog):
     """Trida pro okno s napovedou."""

@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import *
-from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut
+from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut, QCloseEvent
 from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
 from gui_lib.g_day_panel import GDayPanel
 
@@ -11,8 +11,9 @@ from gui_lib.g_sort_button import GSortButton
 from gui_lib.subject_model import SubjectModel
 from gui_lib.g_subject_control_dialog import GSubjectControlDialog
 from gui_lib.g_student_control_dialog import GStudentControlDialog
+from gui_lib.g_savedialog import GSaveDialog
 
-import rc
+import gui_lib.rc
 import sort_lib.sort
 
 class GMainWindow(QMainWindow):
@@ -117,6 +118,7 @@ class GMainWindow(QMainWindow):
         add_action('Nový', self.slt_new_project, file_menu, 'Ctrl+N')
         add_action('Otevřít soubor', self.slt_open_file, file_menu, 'Ctrl+O')
         add_action('Uložit', self.slt_save, file_menu, 'Ctrl+S')
+        add_action('Uložit jako', self.slt_save_as, file_menu, 'Ctrl+Shift+S')
         file_menu.addSeparator()
         add_action('Načíst předměty', self.slt_import_subjects, file_menu)
         add_action('Načíst studenty', self.slt_import_students, file_menu)
@@ -247,11 +249,20 @@ class GMainWindow(QMainWindow):
         self.table_view.model().sourceModel().base_model = self._model
         self._subject_model.base_model = self._model
         self._model.sort_toggle.connect(self.sort_button.sort_button_update)
+        GStudentControlDialog.set_model(model)
 
     
     # slots  
     @Slot()
     def slt_new_project(self):
+        save_dialog = GSaveDialog(self, 'Uložit', 'Chcete uložit práci?')
+        save_dialog.exec()
+        reply = save_dialog.buttonRole(save_dialog.clickedButton())
+        if reply == QMessageBox.AcceptRole:
+            if not self.slt_save():
+                return
+        elif reply == QMessageBox.RejectRole:
+            return
         self.init_new_project(sort_lib.sort.Sort())
 
 
@@ -265,6 +276,15 @@ class GMainWindow(QMainWindow):
 
     @Slot()
     def slt_open_file(self) -> None:
+        save_dialog = GSaveDialog(self, 'Uložit', 'Chcete uložit práci?')
+        save_dialog.exec()
+        reply = save_dialog.buttonRole(save_dialog.clickedButton())
+        if reply == QMessageBox.AcceptRole:
+            if not self.slt_save():
+                return
+        elif reply == QMessageBox.RejectRole:
+            return
+
         self.status_bar.showMessage('Otevírám soubor s uloženou prací')
         # nacteni souboru
         filename = QFileDialog.getOpenFileName(self, "Otevřít soubor", "", "JSON soubor (*.json)")
@@ -284,7 +304,6 @@ class GMainWindow(QMainWindow):
             msg_box.exec()
             return
 
-        # TODO: TEST IT
         self.init_new_project(model)
         
         # pridani dat
@@ -296,26 +315,20 @@ class GMainWindow(QMainWindow):
         self.subject_list_updated.emit(self._model.subjects.keys())
         # TODO: self.subject_counter_changed.emit()
         self.sort_button.sort_button_update(True)
-        # TODO: subjects
         
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
     @Slot()
-    def slt_save(self) -> None:
-        self.status_bar.showMessage('Ukládám práci do souboru')
-        filename = QFileDialog.getSaveFileName(self, 'Uložit', "Bez názvu", "JSON soubor (*.json)", )
+    def slt_save(self) -> bool:
+        if self._model.file_path is None:
+            return self.slt_save_as()
 
-        # otevreni okna pro vyber souboru
-        if not filename[0]:
-            self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
-            return
-        fname = filename[0] if filename[0].endswith('.json') \
-                            else f'{filename[0]}.json'
+        self.status_bar.showMessage('Ukládám práci do souboru')
         try:
-            content = self._model.save_to_json()
-            with open(fname, 'w') as f:
-                f.write(content)
+            self._model.save_to_json()
+            self.status_bar.showMessage('Všechny operace dokončené', 6000)
+            return True
         except sort_lib.sort.Sort.DataNotSortedException:
             # chybova hlaska pro nesetrizena data
             self.status_bar.showMessage('Nastala chyba při exportu', 5000)
@@ -325,7 +338,34 @@ class GMainWindow(QMainWindow):
             msg_box.setWindowTitle('Nesetřízená data')
             msg_box.setText('Nelze uložit práci\nPřed uložení je potřeba data setřídit')
             msg_box.exec()
-        self.status_bar.showMessage('Všechny operace dokončené', 6000)
+            return False
+    
+
+    @Slot()
+    def slt_save_as(self) -> bool:
+        self.status_bar.showMessage('Ukládám práci do souboru')
+        filename = QFileDialog.getSaveFileName(self, 'Uložit jako...', "Bez názvu", "JSON soubor (*.json)", )
+
+        # otevreni okna pro vyber souboru
+        if not filename[0]:
+            self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
+            return False
+        fname = filename[0] if filename[0].endswith('.json') \
+                            else f'{filename[0]}.json'
+        try:
+            self._model.save_to_json(fname)
+            self.status_bar.showMessage('Všechny operace dokončené', 6000)
+            return True
+        except sort_lib.sort.Sort.DataNotSortedException:
+            # chybova hlaska pro nesetrizena data
+            self.status_bar.showMessage('Nastala chyba při exportu', 5000)
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            # FIXME: update warning text
+            msg_box.setWindowTitle('Nesetřízená data')
+            msg_box.setText('Nelze uložit práci\nPřed uložení je potřeba data setřídit')
+            msg_box.exec()
+            return False
 
 
     @Slot()
@@ -392,7 +432,6 @@ class GMainWindow(QMainWindow):
         dialog.setNameFilter('CSV soubor (*.csv)')
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
 
-        # TODO: SUBJECT CHECK
         # otevreni okna pro vyber souboru
         self.status_bar.showMessage('Načítám soubor se studenty')
         if not dialog.exec():
@@ -480,3 +519,17 @@ class GMainWindow(QMainWindow):
     def view_update(self):
         self.data_updated.emit()
         self.student_panel.filter_students()
+    
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        save_dialog = GSaveDialog(self, 'Uložit', 'Chcete uložit práci?')
+        save_dialog.exec()
+        reply = save_dialog.buttonRole(save_dialog.clickedButton())
+        if reply == QMessageBox.AcceptRole:
+            if not self.slt_save():
+                event.ignore()
+                return
+        elif reply == QMessageBox.RejectRole:
+            event.ignore()
+            return
+        super().closeEvent(event)

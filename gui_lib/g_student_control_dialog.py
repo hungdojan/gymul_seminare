@@ -55,7 +55,8 @@ class GStudentControlDialog(QDialog):
             self._model.first_name = self.fname_le.text()
             self._model.last_name = self.lname_le.text()
             self._model.class_id = self.class_le.text()
-            comb = tuple([cb.currentText() for cb in self.subject_cb])
+            comb = tuple([cb.currentText() if cb.currentText() != '-' else None
+                          for cb in self.subject_cb])
             if comb != self._model.required_subjects:
                 self._model.required_subjects = comb
                 self._gmainwindow.subject_counter_changed.emit()
@@ -153,6 +154,8 @@ class GStudentControlDialog(QDialog):
         Args:
             model (sort_lib.sort.Sort): Nova instance sort modelu.
         """
+        if cls.__sort_model is None:
+            return
         cls.__student_model.removeRows(0, cls.__student_model.rowCount())
         cls.__sort_model = model
         for student in cls.__sort_model.students:

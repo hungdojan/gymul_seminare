@@ -66,6 +66,7 @@ class Sort(QObject):
         # Seznam predmetu
         self.__subjects = {}
         self._is_sorted = False
+        self._file_path = None
     
 
     @property
@@ -86,6 +87,11 @@ class Sort(QObject):
     @property
     def is_sorted(self) -> bool:
         return self._is_sorted
+
+
+    @property
+    def file_path(self) -> str:
+        return self._file_path
     
 
     def set_sorted(self, value: bool) -> None:
@@ -409,7 +415,7 @@ class Sort(QObject):
                 f.write(f'{str(student)}\n')
 
 
-    def save_to_json(self) -> str:
+    def save_to_json(self, path: str=None) -> str:
         """Vraci retezcovou reprezentaci backend objektu v JSON formatu.
 
         Je potreba pred ulozenim backendu setridit data.
@@ -420,8 +426,12 @@ class Sort(QObject):
         Returns:
             str: Vygenerovany retezec JSON objektu.
         """
+        if path is None and self._file_path is None:
+            raise FileNotFoundError('No destination path found')
         if not self._is_sorted:
             raise Sort.DataNotSortedException('Cannot save unsorted data')
+        if path is not None:
+            self._file_path = path
 
         main_obj = {}
         main_obj['_type'] = "Sort"
@@ -440,7 +450,11 @@ class Sort(QObject):
 
         json_doc = QJsonDocument()
         json_doc.setObject(main_obj)
-        return str(json_doc.toJson(), 'utf-8')
+
+        content = str(json_doc.toJson(), 'utf-8')
+        with open(self._file_path, 'w') as f:
+            f.write(content)
+        
 
 
     def clear_data(self):
@@ -474,6 +488,7 @@ class Sort(QObject):
 
         # nacitani dat
         model = Sort()
+        model._file_path = path
         main_obj = json_doc.object()
         if main_obj['_type'] != 'Sort':
             raise Sort.JsonFileCorruptedException('JSON error: Expected Sort object')

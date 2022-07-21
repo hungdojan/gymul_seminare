@@ -6,12 +6,12 @@
         {
             "label": "compile QRC for Windows",
             "type": "shell",
-            "command": ". ${workspaceFolder}\\.venv\\Scripts\\Activate.ps1; pyside6-rcc.exe .\\resources\\resources.qrc -o rc.py"
+            "command": ". ${workspaceFolder}\\.venv\\Scripts\\Activate.ps1; pyside6-rcc.exe .\\resources\\resources.qrc -o gui_lib\\rc.py"
         },
         {
             "label": "compile QRC for Linux",
             "type": "shell",
-            "command": ". ${workspaceFolder}/.venv/bin/activate; pyside6-rcc ./resources/resources.qrc -o rc.py"
+            "command": ". ${workspaceFolder}/.venv/bin/activate; pyside6-rcc ./resources/resources.qrc -o gui_lib/rc.py"
         }
     ]
 }
