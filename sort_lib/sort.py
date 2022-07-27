@@ -38,14 +38,6 @@ class Sort(QObject):
         """
         pass
 
-    class DataNotSortedException(Exception):
-        """Vyjimka pro nesetrizena data.
-
-        Tato vyjimka nastane v pripade, ze uzivatel pred vykonanim nejakeho
-        ukonu nesetridil data.
-        """
-        pass
-
     class JsonFileCorruptedException(Exception):
         """Vyjimka pro spatny/poskozeny soubor JSON.
 
@@ -420,16 +412,11 @@ class Sort(QObject):
 
         Je potreba pred ulozenim backendu setridit data.
 
-        Raises:
-            Sort.DataNotSortedException: Data nejsou setrizena.
-
         Returns:
             str: Vygenerovany retezec JSON objektu.
         """
         if path is None and self._file_path is None:
             raise FileNotFoundError('No destination path found')
-        if not self._is_sorted:
-            raise Sort.DataNotSortedException('Cannot save unsorted data')
         if path is not None:
             self._file_path = path
 
@@ -478,6 +465,15 @@ class Sort(QObject):
         Returns:
             Sort: Inicializovany Sort objekt.
         """
+        def convert_combination(model: Sort, student: Student, comb: tuple) -> list:
+            out = []
+            for i in range(len(model.__days)):
+                if model.__days[i].get_subject(comb[i]) is None:
+                    out.append((None, None))
+                else:
+                    out.append((comb[i], model.__days[i]))
+            return out
+
         # cteni ze souboru
         f = QFile(path)
         f.open(QIODevice.OpenModeFlag.ReadOnly)
@@ -509,32 +505,33 @@ class Sort(QObject):
                 day.add_subject_name(subject['name'])
             pass
 
+
         # studenti
         for student_json in main_obj['students']:
             if student_json['_type'] != 'Student':
                 raise Sort.JsonFileCorruptedException('JSON error: expected Student object')
-            model.__students.append(
-                Student(
-                    student_json['first_name'],
-                    student_json['last_name'],
-                    student_json['class_id'],
-                    tuple(student_json['required_subjects']),
-                    model,
-                    student_json['id']
-                )
-            )
-        
-        model.sort_data()
-        # studenti s aktualizovanymi predmety
-        for student in [s for s in model.students if len(s.possible_comb) > 0]:
-            student_json = [s for s in main_obj['students'] if s['id'] == student.id][0]
-            if len(student_json['chosen_comb']) == 0:
-                student.set_comb(-1)
-            else:
-                comb = list(map(lambda x: x if x != 'None' else None, student_json['chosen_comb']))
-                student.set_comb(student.possible_comb.index(tuple(comb)))
-            student._is_locked = student_json['is_locked']
-        
-        model.set_sorted(True)
+            student = Student(
+                student_json['first_name'],
+                student_json['last_name'],
+                student_json['class_id'],
+                tuple(student_json['required_subjects']),
+                model,
+                student_json['id']
 
+            )
+            model.__students.append(student)
+            
+            # nacteni validnich kombinaci
+            possible_comb = []
+            for comb_list in student_json['possible_comb']:
+                comb_tuple = tuple([comb if comb != 'None' else None for comb in comb_list])
+                comb = convert_combination(model, student, comb_tuple)
+                possible_comb.append(comb)
+            student.possible_comb = possible_comb
+
+            # nastaveni vybrane kombinace
+            if len(student_json['chosen_comb']) > 1:
+                selected_comb = tuple([comb if comb != 'None' else None for comb in student_json['chosen_comb']])
+                student.set_comb(student.possible_comb.index(selected_comb))
+        
         return model

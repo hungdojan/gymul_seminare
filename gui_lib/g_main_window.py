@@ -314,7 +314,7 @@ class GMainWindow(QMainWindow):
         self.view_updated.emit()
         self.subject_list_updated.emit(self._model.subjects.keys())
         # TODO: self.subject_counter_changed.emit()
-        self.sort_button.sort_button_update(True)
+        self.sort_button.sort_button_update(self._model.is_sorted)
         
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
@@ -325,20 +325,9 @@ class GMainWindow(QMainWindow):
             return self.slt_save_as()
 
         self.status_bar.showMessage('Ukládám práci do souboru')
-        try:
-            self._model.save_to_json()
-            self.status_bar.showMessage('Všechny operace dokončené', 6000)
-            return True
-        except sort_lib.sort.Sort.DataNotSortedException:
-            # chybova hlaska pro nesetrizena data
-            self.status_bar.showMessage('Nastala chyba při exportu', 5000)
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            # FIXME: update warning text
-            msg_box.setWindowTitle('Nesetřízená data')
-            msg_box.setText('Nelze uložit práci\nPřed uložení je potřeba data setřídit')
-            msg_box.exec()
-            return False
+        self._model.save_to_json()
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
+        return True
     
 
     @Slot()
@@ -352,20 +341,10 @@ class GMainWindow(QMainWindow):
             return False
         fname = filename[0] if filename[0].endswith('.json') \
                             else f'{filename[0]}.json'
-        try:
-            self._model.save_to_json(fname)
-            self.status_bar.showMessage('Všechny operace dokončené', 6000)
-            return True
-        except sort_lib.sort.Sort.DataNotSortedException:
-            # chybova hlaska pro nesetrizena data
-            self.status_bar.showMessage('Nastala chyba při exportu', 5000)
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            # FIXME: update warning text
-            msg_box.setWindowTitle('Nesetřízená data')
-            msg_box.setText('Nelze uložit práci\nPřed uložení je potřeba data setřídit')
-            msg_box.exec()
-            return False
+
+        self._model.save_to_json(fname)
+        self.status_bar.showMessage('Všechny operace dokončené', 6000)
+        return True
 
 
     @Slot()
