@@ -4,6 +4,7 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtCore import QModelIndex, Qt, Slot
 
 import gui_lib.g_main_window
+from gui_lib.commands.subject_control_action import SubjectControlAction
 
 class GSubjectControlDialog(QDialog):
 
@@ -16,6 +17,15 @@ class GSubjectControlDialog(QDialog):
         self._changes: list[str] = []
         self._setupUI()
         self.setWindowTitle('Správce předmětů')
+    
+    @property
+    def changes(self) -> list:
+        return self._changes
+    
+
+    @property
+    def base_gparent(self) -> 'gui_lib.g_main_window.GMainWindow':
+        return self._base_gparent
 
     
     def _copy_model(self) -> None:
@@ -61,12 +71,8 @@ class GSubjectControlDialog(QDialog):
     def accept(self) -> None:
         """Aktualizace originalniho modelu."""
         self._subject_model.deleteLater()
-        for subj in self._changes:
-            if self._base_gparent.model.subjects.get(subj) is None:
-                self._base_gparent.model.add_subject(subj)
-            else:
-                self._base_gparent.model.remove_subject(subj)
-        self._base_gparent.subject_list_updated.emit(self._changes)
+        if self._changes:
+            self._base_gparent.command_builder.execute(SubjectControlAction(self))
         super().accept()
     
 

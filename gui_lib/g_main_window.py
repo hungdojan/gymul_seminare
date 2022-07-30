@@ -13,8 +13,9 @@ from gui_lib.g_subject_control_dialog import GSubjectControlDialog
 from gui_lib.g_student_control_dialog import GStudentControlDialog
 from gui_lib.g_savedialog import GSaveDialog
 
-import gui_lib.rc
+import gui_lib.rc   # generated resource file
 import sort_lib.sort
+from sort_lib.command import CommandBuilder
 
 class GMainWindow(QMainWindow):
     """Trida reprezentujici hlavni okno programu."""
@@ -41,6 +42,7 @@ class GMainWindow(QMainWindow):
         self._subject_model = SubjectModel(self._model)
         self.subject_list_updated.connect(self._subject_model.update_list)
         self.subject_list_clear.connect(self._subject_model.clear_model)
+        self._command_builder = CommandBuilder()
 
         self._setupUI()
         # seznam oznacenych g-studentu
@@ -60,6 +62,11 @@ class GMainWindow(QMainWindow):
     @property
     def subject_model(self) -> SubjectModel:
         return self._subject_model
+    
+
+    @property
+    def command_builder(self) -> CommandBuilder:
+        return self._command_builder
 
 
     def _setupUI(self) -> None:
@@ -83,6 +90,11 @@ class GMainWindow(QMainWindow):
         # klavesova zkratka pro roztrideni studentu
         sort_shortcut = QShortcut(QKeySequence('F5'), self)
         sort_shortcut.activated.connect(self.slt_sort)
+        # klavesove zkratky pro undo/redo akce
+        self.redo_shortcut = QShortcut(QKeySequence('Ctrl+Y'), self)
+        self.redo_shortcut.activated.connect(self._command_builder.redo_slot)
+        self.undo_shortcut = QShortcut(QKeySequence('Ctrl+Z'), self)
+        self.undo_shortcut.activated.connect(self._command_builder.undo_slot)
 
         self.main_grid_layout.setRowStretch(0, 0)
         self.main_grid_layout.setRowStretch(1, 3)
@@ -94,7 +106,7 @@ class GMainWindow(QMainWindow):
         self.main_grid_layout.setColumnStretch(3, 1)
 
         self.showMaximized()
-    
+
 
     def _setup_menu_bar(self) -> None:
         """ Vygeneruje horni listu """
@@ -239,9 +251,12 @@ class GMainWindow(QMainWindow):
         # odpojeni a smazani starych widgetu
         self.student_panel.clear()
         self.day_panel.clear()
+        self._command_builder.clear()
 
         self.subject_list_clear.emit()
         del self._model
+
+        # inicializace noveho modelu
         self._model = model
         sort_lib.sort.Sort.student_id_counter = 1
         

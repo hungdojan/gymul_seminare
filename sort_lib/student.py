@@ -32,7 +32,7 @@ class Student:
 
         # Seznam vsech moznych kombinaci predmetu,
         # ktery si student muze zapsat
-        self.__possible_comb = dict()
+        self._possible_comb = dict()
         # Vybrana kombinace studenta
         self.__chosen_comb: tuple = None
         # Zamek proti prepisu
@@ -79,7 +79,7 @@ class Student:
     @property
     def possible_comb(self) -> list:
         # vraci list nazvu kombinaci
-        out_list = [tuple([subj[0] for subj in comb]) for comb in self.__possible_comb]
+        out_list = [tuple([subj[0] for subj in comb]) for comb in self._possible_comb]
         return out_list
 
     @property
@@ -109,7 +109,7 @@ class Student:
             self._is_locked = False
             self.__update_combination(None)
             self.__parent.set_sorted(False)
-        self.__possible_comb = value
+        self._possible_comb = value
     
 
     @required_subjects.setter
@@ -138,7 +138,7 @@ class Student:
             list(map(lambda name: self.__parent.attach_student(self, name), self.__required_subjects))
 
         self.__update_combination(None)
-        self.__possible_comb = []
+        self._possible_comb = []
         # FIXME: optimalization??
         self.__parent.set_sorted(False)
     
@@ -157,10 +157,10 @@ class Student:
         """
         if self._is_locked:
             raise Student.StudentLockedException("Cannot edit locked student's data")
-        if index not in range(len(self.__possible_comb)):
+        if index not in range(len(self._possible_comb)):
             self.__update_combination(None)
         else:
-            self.__update_combination(self.__possible_comb[index])
+            self.__update_combination(self._possible_comb[index])
     
 
     def receive_msg(self, msg: str):

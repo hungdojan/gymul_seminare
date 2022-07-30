@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import *
-from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtCore import Qt, QModelIndex, Slot, Signal
+from PySide6.QtGui import QStandardItem, QStandardItemModel, QKeySequence, QShortcut
+from PySide6.QtCore import Qt, QModelIndex, Slot
 
 import gui_lib.g_main_window
 from gui_lib.g_subject_table_view import ProxyModel
+from gui_lib.commands.student_control_actions import *
 
 import sort_lib.sort
 from  sort_lib.student import Student
@@ -12,11 +13,23 @@ class GStudentControlDialog(QDialog):
 
     class GStudentControlEditDialog(QDialog):
         
-        def __init__(self, student_model: Student, gmainwindow: 'gui_lib.g_main_window.GMainWindow'):
+        def __init__(self, student_model: Student, gmainwindow: 'gui_lib.g_main_window.GMainWindow', new_student: bool=False):
             super().__init__()
             self._model = student_model
             self._gmainwindow = gmainwindow
             self._setupUI()
+            # pravdivosti hodnota znacici, o jakou akci se jedna (pridat/upravit)
+            self._to_add_student = new_student
+        
+        @property
+        def model(self) -> Student:
+            return self._model
+
+
+        @property
+        def gmainwindow(self) -> 'gui_lib.g_main_window.GMainWindow':
+            return self._gmainwindow
+
 
         def _setupUI(self) -> None:
             """Vygeneruje obsah GStudentControlEditDialog."""
@@ -52,14 +65,20 @@ class GStudentControlDialog(QDialog):
 
         def accept(self) -> None:
             """Aktualizace modelu v pripade uspesneho ukonceni dialogu."""
-            self._model.first_name = self.fname_le.text()
-            self._model.last_name = self.lname_le.text()
-            self._model.class_id = self.class_le.text()
-            comb = tuple([cb.currentText() if cb.currentText() != '-' else None
-                          for cb in self.subject_cb])
-            if comb != self._model.required_subjects:
-                self._model.required_subjects = comb
-                self._gmainwindow.subject_counter_changed.emit()
+            if self._to_add_student:
+                # u pridani studenta akci vytvari volajici (GStudentControlDialog)
+                self._model.first_name = self.fname_le.text()
+                self._model.last_name = self.lname_le.text()
+                self._model.class_id = self.class_le.text()
+                comb = tuple([cb.currentText() if cb.currentText() != '-' else None
+                            for cb in self.subject_cb])
+                if comb != self._model.required_subjects:
+                    self._model.required_subjects = comb
+                    self._gmainwindow.subject_counter_changed.emit()
+            else:
+                # pri uprave dat akci vyvolava tento dialog (GStudentControlDialogEdit)
+                # vlozi akci do command builderu pro moznost undo/redo
+                self._gmainwindow.command_builder.execute(StudentControlEdit(self))
             super().accept()
 
     # model studentu
@@ -105,7 +124,7 @@ class GStudentControlDialog(QDialog):
             return
         if not row:
             row = cls.__get_row(student.id)
-            if not row:
+            if row is None:
                 return
         fname_item = cls.__student_model.index(row, 1, QModelIndex())
         cls.__student_model.setData(fname_item, student.first_name)
@@ -164,6 +183,13 @@ class GStudentControlDialog(QDialog):
     def __init__(self, base_gparent: 'gui_lib.g_main_window.GMainWindow'):
         super().__init__()
         self._base_gparent = base_gparent
+
+        # klavesove zkratky pro undo/redo
+        self.__redo_shortcut = QShortcut(QKeySequence('Ctrl+Y'), self)
+        self.__redo_shortcut.activated.connect(base_gparent.command_builder.redo_slot)
+        self.__undo_shortcut = QShortcut(QKeySequence('Ctrl+Z'), self)
+        self.__undo_shortcut.activated.connect(base_gparent.command_builder.undo_slot)
+
         if __class__.__student_model is None:
             __class__.__init_model(self._base_gparent.model)
         self._changed = []
@@ -177,6 +203,7 @@ class GStudentControlDialog(QDialog):
         self.table_view = QTableView()
         self.table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_view.horizontalHeader().setHighlightSections(False)
         self.table_view.verticalHeader().setVisible(False)
@@ -187,6 +214,7 @@ class GStudentControlDialog(QDialog):
         pm = ProxyModel()
         pm.setSourceModel(__class__.__student_model)
         self.table_view.setModel(pm)
+        pm.sort(0)
         self.layout().addWidget(self.table_view, 0, 0, 5, 1)
 
         # tlacitka na prave strane
@@ -209,6 +237,8 @@ class GStudentControlDialog(QDialog):
     
 
     def accept(self) -> None:
+        self.__redo_shortcut.activated.disconnect(self._base_gparent.command_builder.redo_slot)
+        self.__undo_shortcut.activated.disconnect(self._base_gparent.command_builder.undo_slot)
         super().accept()
 
 
@@ -216,11 +246,11 @@ class GStudentControlDialog(QDialog):
     def add_student(self):
         """Akce pro pridani studenta."""
         student = Student('', '', '', (None, None, None), self._base_gparent.model)
-        if __class__.GStudentControlEditDialog(student, self._base_gparent).exec():
-            # prida do sort modelu, student panelu a tridniho modelu
-            self._base_gparent.model.add_student(student)
-            self._base_gparent.student_panel.add_gstudent(student)
-            __class__.add_student_to_model(student)
+        if __class__.GStudentControlEditDialog(student, self._base_gparent, True).exec():
+            # vlozi akci do command builderu pro moznost undo/redo
+            self._base_gparent.command_builder.execute(StudentControlAdd(student, self._base_gparent))
+        else:
+            sort_lib.sort.Sort.student_id_counter -= 1
 
     @Slot()
     def edit_student(self):
@@ -232,9 +262,7 @@ class GStudentControlDialog(QDialog):
             id_value = self.table_view.model().data(
                             self.table_view.model().index(index[0], 0, QModelIndex()))
             student = self._base_gparent.model.get_student(str(id_value))
-            if __class__.GStudentControlEditDialog(student, self._base_gparent).exec():
-                self._base_gparent.student_panel.update_student(str(id_value))
-                __class__.update_row(student, index[0])
+            __class__.GStudentControlEditDialog(student, self._base_gparent).exec()
 
 
     @Slot()
@@ -246,6 +274,5 @@ class GStudentControlDialog(QDialog):
             # vyhleda id studenta na danem radku
             id_value = self.table_view.model().data(
                             self.table_view.model().index(index[0], 0, QModelIndex()))
-            # smaze studenta z student panelu, sort modelu a modelu teto tridy
-            self._base_gparent.student_panel.delete_student_id(id_value)
-            __class__.__student_model.removeRow(index[0])
+            # vlozi akci do command builderu pro moznost undo/redo
+            self._base_gparent.command_builder.execute(StudentControlDelete(self._base_gparent, id_value))

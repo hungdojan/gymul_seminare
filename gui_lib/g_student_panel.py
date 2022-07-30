@@ -37,11 +37,12 @@ class GStudentPanel(QScrollArea):
         self.setWidget(self.main_frame)
     
 
-    def add_gstudent(self, student: Student) -> GStudent:
+    def add_gstudent(self, student: Student, index: int=-1) -> GStudent:
         """Vytvori g-studenta podle modelu a vlozi ho do ramce.
 
         Args:
             student (Student): Model studenta.
+            index (int, optional): Radek, na ktery se ma student vlozit. Defaults to -1.
 
         Returns:
             GStudent: Vytvorena instance g-studenta.
@@ -56,8 +57,11 @@ class GStudentPanel(QScrollArea):
             self._base_gparent.table_view.model().sourceModel().update_model_counter)
         self._base_gparent.data_updated.connect(gstudent.update_content)
 
-        self.main_frame.layout().insertWidget(len(self.lof_gstudents), gstudent)
         self.lof_gstudents.append(gstudent)
+        if index < 0:
+            self.main_frame.layout().insertWidget(len(self.lof_gstudents) - 1, gstudent)
+        else:
+            self.main_frame.layout().insertWidget(index, gstudent)
         return gstudent
     
 
@@ -95,6 +99,22 @@ class GStudentPanel(QScrollArea):
                     if gs.model.id == student_id]
         if gstudent:
             gstudent[0].load_from_model()
+    
+
+    def student_index(self, student: Student) -> int:
+        """Vraci radek, na kterem se student nachazi.
+
+        Args:
+            student (Student): Model (instance) studenta.
+
+        Returns:
+            int: Vysledny radek, -1 pokud student nebyl nalezen v seznamu.
+        """
+        gstudent = [gstudent for gstudent in self.lof_gstudents
+                    if gstudent.model == student]
+        if not gstudent:
+            return -1
+        return self.lof_gstudents.index(gstudent[0])
     
 
     def delete_student_id(self, student_id: str):
