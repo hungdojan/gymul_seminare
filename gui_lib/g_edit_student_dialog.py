@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QDialog, QFormLayout, QLineEdit, QVBoxLayout, QDialogButtonBox
 import gui_lib.g_student
+from gui_lib.commands.edit_student_dialog_action import EditStudentDialogAction
 
 class GEditStudentDialog(QDialog):
     """Trida pro okno upravujici studentovy osobni data."""
@@ -37,8 +38,6 @@ class GEditStudentDialog(QDialog):
 
     def accept(self) -> None:
         """Akce po uspesnem ukonceni dialogoveho okna"""
-        self.gstudent.model.first_name = self.fn_lbl.text()
-        self.gstudent.model.last_name = self.ln_lbl.text()
-        self.gstudent.model.class_id = self.class_lbl.text()
-        self.gstudent.update_personal_data()
+        gmainwindow = self.gstudent.base_gparent.base_gparent
+        gmainwindow.command_builder.execute(EditStudentDialogAction(self))
         super().accept()
