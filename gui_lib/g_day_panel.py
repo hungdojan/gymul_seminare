@@ -28,11 +28,12 @@ class GDayPanel(QScrollArea):
         self.setWidget(self.main_frame)
     
 
-    def add_gday(self, day: Day) -> GDay:
+    def add_gday(self, day: Day, index: int=-1) -> GDay:
         """Vytvori instanci dne a prida ho na platno.
 
         Args:
             day (Day): Model dne.
+            index (int, optional): Radek, na ktery se ma den pridat. Defaults to -1.
 
         Returns:
             GDay: Instance vytvoreneho g-dne.
@@ -41,8 +42,12 @@ class GDayPanel(QScrollArea):
 
         self._base_gparent.day_buttons['filter'].toggled.connect(gday.filter_toggle)
         self._base_gparent.subject_list_updated.connect(gday.update_list)
-        self.main_frame.layout().insertWidget(len(self.lof_gdays), gday)
-        self.lof_gdays.append(gday)
+        if index < 0:
+            self.lof_gdays.append(gday)
+            self.main_frame.layout().insertWidget(len(self.lof_gdays) - 1, gday)
+        else:
+            self.lof_gdays.insert(index, gday)
+            self.main_frame.layout().insertWidget(index, gday)
         return gday
 
 

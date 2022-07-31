@@ -1,5 +1,6 @@
 from sort_lib.subject import Subject
 import gui_lib.g_day 
+from gui_lib.commands.g_subject_actions import SelectSubjectAction
 from PySide6.QtWidgets import QFrame, QLabel, QHBoxLayout, QStyle, QStyleOption
 from PySide6.QtCore import Signal, Slot, Qt
 from PySide6.QtGui import QMouseEvent, QPaintEvent, QPainter
@@ -39,6 +40,11 @@ class GSubject(QFrame):
     
 
     @property
+    def base_gparent(self) -> 'gui_lib.g_day.GDay':
+        return self._base_gparent
+    
+
+    @property
     def name(self):
         return self._name
 
@@ -52,17 +58,7 @@ class GSubject(QFrame):
         """Prepsana funkce reakce na udalost mysi."""
         # leve tlacitko na mysi prepina stav oznaceni predmetu
         if event.button() == Qt.MouseButton.LeftButton:
-            self.setProperty('isSelected', not self.property('isSelected'))
-
-            # meni zobrazeni g-predmetu
-            if self.property('isSelected'):
-                self._model = self._base_gparent.model.add_subject_name(self._name)
-            else:
-                self._base_gparent.model.remove_subject(self._name)
-                self._model = None
-
-            self.content_update()
-            self.selected_subjects_changed.emit()
+            self._base_gparent._base_gparent._base_gparent.command_builder.execute(SelectSubjectAction(self))
         else:
             super().mousePressEvent(event)
     

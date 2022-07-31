@@ -96,30 +96,30 @@ class Sort(QObject):
         self.sort_toggle.emit(value)
 
 
-    def add_day(self) -> Day:
+    def add_day(self, day: Day=None, index: int=-1) -> Day:
         """Prida novy den do seznamu.
 
+        Args:
+            index (int, optional): Vlozi instanci dne na zadanou pozici. Defaults to -1.
         Returns:
             Day: Instance nove vytvoreneho dne.
         """
-        day = Day(self)
-        self.__days.append(day)
+        if day is None:
+            day = Day(self)
+        if index < 0:
+            self.__days.append(day)
+        else:
+            self.__days.insert(index, day)
         self.set_sorted(False)
         return day
     
 
-    def remove_day(self, index: int) -> None:
-        """Rusi a maze instanci dne ze seznamu.
-
-        Indexuje se od 0.
-
-        Args:
-            index (int): Index (pozice) dne k smazani.
-        """
-        if index in range(len(self.days)):
-            self.__days[index].clear_data()
-            del self.__days[index]
-            self.set_sorted(False)
+    def remove_day(self, model: Day):
+        if model not in self.__days:
+            return
+        model.clear_subjects()
+        self.__days.remove(model)
+        self.set_sorted(False)
 
 
     def add_subject(self, name: str):
