@@ -37,7 +37,7 @@ class GStudent(QWidget):
     
 
     @property
-    def base_gparent(self) -> 'gui_lib.g_main_window.GMainWindow':
+    def base_gparent(self) -> 'gui_lib.g_student_panel.GStudentPanel':
         return self._base_gparent
 
 

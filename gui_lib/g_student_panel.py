@@ -25,6 +25,11 @@ class GStudentPanel(QScrollArea):
         self.setWidgetResizable(True)
     
 
+    @property
+    def base_gparent(self) -> 'gui_lib.g_main_window.GMainWindow':
+        return self._base_gparent
+    
+
     def _setupUI(self) -> None:
         """Vygeneruje obsah GStudentPanel."""
         # nastaveni korene skrolovaciho widgetu
