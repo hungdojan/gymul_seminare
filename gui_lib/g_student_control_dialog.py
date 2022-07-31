@@ -43,12 +43,18 @@ class GStudentControlDialog(QDialog):
             self.class_le = QLineEdit(self._model.class_id)
             self.class_le.setPlaceholderText('Třída')
             self.subject_cb = [QComboBox() for _ in range(3)]
+            self.lock = QCheckBox()
+            self.lock.setDisabled(self._model.chosen_comb is None)
+            self.lock.toggled.connect(self.lock_toggle)
+            self.lock.setChecked(self._model.is_locked)
 
             form_layout.addRow("Jméno:", self.fname_le)
             form_layout.addRow("Příjmení:", self.lname_le)
             form_layout.addRow("Třída:", self.class_le)
+            form_layout.addRow("Zámek:", self.lock)
 
             for i in range(len(self.subject_cb)):
+                # nastavi pocatecni hodnoty
                 self.subject_cb[i].setModel(self._gmainwindow.subject_model)
                 text = self._model.required_subjects[i] if self._model.required_subjects[i] else '-'
                 index = self.subject_cb[i].findText(text)
@@ -80,6 +86,19 @@ class GStudentControlDialog(QDialog):
                 # vlozi akci do command builderu pro moznost undo/redo
                 self._gmainwindow.command_builder.execute(StudentControlEdit(self))
             super().accept()
+        
+        @Slot()
+        def lock_toggle(self):
+            """Aktualizuje UI podle toho, zda je student zamceny."""
+            self._model.is_locked = self.lock.isChecked()
+            # vyhledani studenta
+            gstudent = [gstudent for gstudent in self.gmainwindow.student_panel.lof_gstudents
+                        if gstudent.model == self._model]
+            if len(gstudent) < 1:
+                return
+            # aktualizace v hlavnim okne a momentalniho dialogu
+            gstudent[0].lock_trigger()
+            list(map(lambda x: x.setDisabled(self._model.is_locked), self.subject_cb))
 
     # model studentu
     __student_model = None
@@ -87,6 +106,11 @@ class GStudentControlDialog(QDialog):
 
     @classmethod
     def __init_model(cls, model: 'sort_lib.sort.Sort'):
+        """Inicializuje model studentu.
+
+        Args:
+            model (sort_lib.sort.Sort): Model sort, ve kterem se nachazi seznam studentu.
+        """
         cls.__sort_model = model
         cls.__student_model = QStandardItemModel()
         cls.__student_model.setHorizontalHeaderLabels(['ID', 'Jméno', 'Příjmení', 'Třída'])
@@ -189,6 +213,8 @@ class GStudentControlDialog(QDialog):
         self.__redo_shortcut.activated.connect(base_gparent.command_builder.redo_slot)
         self.__undo_shortcut = QShortcut(QKeySequence('Ctrl+Z'), self)
         self.__undo_shortcut.activated.connect(base_gparent.command_builder.undo_slot)
+        self.__delete_student = QShortcut(QKeySequence('Delete'), self)
+        self.__delete_student.activated.connect(self.delete_student)
 
         if __class__.__student_model is None:
             __class__.__init_model(self._base_gparent.model)
@@ -209,6 +235,7 @@ class GStudentControlDialog(QDialog):
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.setFocusPolicy(Qt.NoFocus)
         self.table_view.setSortingEnabled(True)
+        self.table_view.doubleClicked.connect(lambda _: self.edit_student())
 
         # tridici model
         pm = ProxyModel()
@@ -239,6 +266,7 @@ class GStudentControlDialog(QDialog):
     def accept(self) -> None:
         self.__redo_shortcut.activated.disconnect(self._base_gparent.command_builder.redo_slot)
         self.__undo_shortcut.activated.disconnect(self._base_gparent.command_builder.undo_slot)
+        self.__delete_student.activated.disconnect(self.delete_student)
         super().accept()
 
 

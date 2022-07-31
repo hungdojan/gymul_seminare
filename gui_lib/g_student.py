@@ -9,6 +9,7 @@ from gui_lib.g_constants import StudentStatus
 from gui_lib.g_edit_student_dialog import GEditStudentDialog
 from gui_lib.g_combination_dialog import GCombinationDialog
 import gui_lib.g_student_control_dialog
+from gui_lib.commands.g_student_actions import *
 
 
 class GStudent(QWidget):
@@ -70,7 +71,7 @@ class GStudent(QWidget):
         self.class_id_lbl = QLabel(self.model.class_id)
 
         # ComboBoxy jednotlivych predmetu
-        self.subjects_cb = []
+        self.subjects_cb: list[GComboBox] = []
         for i in range(len(self._model.required_subjects)):
             cb = GComboBox(self, i)
             cb.currentIndexChanged.connect(self.update_subjects)
@@ -201,10 +202,9 @@ class GStudent(QWidget):
             self.model.is_locked = action.isChecked()
         if self.model.is_locked:
             self.lock_lbl.show()
-            list(map(lambda x: x.setDisabled(True), self.subjects_cb))
         else:
             self.lock_lbl.hide()
-            list(map(lambda x: x.setDisabled(False), self.subjects_cb))
+        list(map(lambda x: x.setDisabled(self.model.is_locked), self.subjects_cb))
     
 
     @Slot()
@@ -226,9 +226,4 @@ class GStudent(QWidget):
         _index = self.subjects_cb.index(cb)
         if self._model.required_subjects[_index] == cb.currentText():
             return
-        current_comb = tuple([cb.currentText() if cb.currentText() != '-' else None 
-                              for cb in self.subjects_cb])
-        self._model.required_subjects = current_comb
-        self._base_gparent._base_gparent.view_updated.emit()
-        self.required_subjects_changed.emit()
-        gui_lib.g_student_control_dialog.GStudentControlDialog.update_row(self._model)
+        self._base_gparent.base_gparent.command_builder.execute(StudentRequiredSubjectsChange(self, _index))
