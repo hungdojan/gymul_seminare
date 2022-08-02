@@ -52,11 +52,11 @@ class Sort(QObject):
     def __init__(self):
         super().__init__()
         # Seznam studentu
-        self.__students = []
+        self.__students: list[Student] = []
         # Seznam dnu
-        self.__days = []
+        self.__days: list[Day] = []
         # Seznam predmetu
-        self.__subjects = {}
+        self.__subjects: dict[str, list[Student]] = {}
         self._is_sorted = False
         self._file_path = None
     
@@ -148,7 +148,7 @@ class Sort(QObject):
         del self.__subjects[name]
     
 
-    def add_student(self, student: Student) -> bool:
+    def add_student(self, student: Student, index: int=-1) -> bool:
         """Prida studenta do seznamu.
 
         V seznamu se nesmi vyskytovat 2 studenti se stejnym ID. 
@@ -156,6 +156,7 @@ class Sort(QObject):
 
         Args:
             student (Student): Instance studenta.
+            index (int, optional): Pozice, na ktery se student vlozi. Defaults to -1.
 
         Returns:
             bool: Nenastala kolize ID studentu a novy student byl uspesne pridan.
@@ -164,7 +165,11 @@ class Sort(QObject):
             return False
         if len([s for s in self.__students if s.id == student.id]) > 0:
             return False
-        self.__students.append(student)
+
+        if index < 0:
+            self.__students.append(student)
+        else:
+            self.__students.insert(index, student)
         self.set_sorted(False)
         return True
     

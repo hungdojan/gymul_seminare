@@ -105,7 +105,7 @@ class StudentControlDelete(Command):
             self._model.set_comb(self._model.possible_comb.index(self._chosen_comb))
 
         # vlozeni do okna a modelu
-        self._gmainwindow.model.add_student(self._model)
+        self._gmainwindow.model.add_student(self._model, self._index)
         self._gmainwindow.student_panel.add_gstudent(self._model, self._index)
         gui_lib.g_student_control_dialog.GStudentControlDialog.add_student_to_model(self._model)
         self._gmainwindow.subject_counter_changed.emit()

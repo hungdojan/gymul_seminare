@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import *
 from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut, QCloseEvent
 from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
+from gui_lib.commands.g_main_window_actions import MainWindowImportStudents, MainWindowImportSubjects
 from gui_lib.g_day_panel import GDayPanel
 from gui_lib.commands.day_panel_actions import DayPanelAddDay
 
@@ -283,14 +284,6 @@ class GMainWindow(QMainWindow):
 
 
     @Slot()
-    def slt_delete_student(self) -> None:
-        """Funkce maze oznacene studenty"""
-        self.status_bar.showMessage('Mažu studenty')
-        list(map(lambda x: x.delete_gstudent(), self.selected_gstudents))
-        self.status_bar.showMessage('Všechny operace dokončené', 6000)
-
-
-    @Slot()
     def slt_open_file(self) -> None:
         save_dialog = GSaveDialog(self, 'Uložit', 'Chcete uložit práci?')
         save_dialog.exec()
@@ -378,8 +371,7 @@ class GMainWindow(QMainWindow):
             return
         filename = dialog.selectedFiles()[0]
         try:
-            new_subj = self.model.load_file_subjects(filename)
-            self.subject_list_updated.emit(new_subj)
+            self.command_builder.execute(MainWindowImportSubjects(self, filename))
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
@@ -434,13 +426,7 @@ class GMainWindow(QMainWindow):
             return
         filename = dialog.selectedFiles()[0]
         try:
-            new_ids, new_subjs = self.model.load_file_students(filename)
-            # nacteni novych predmetu
-            if len(new_subjs) > 0:
-                self.subject_list_updated.emit(new_subjs)
-            new_students = [student for student in self.model.students if student.id in new_ids]
-            list(map(lambda x: self.student_panel.add_gstudent(x), new_students))
-            list(map(lambda x: GStudentControlDialog.add_student_to_model(x), new_students))
+            self.command_builder.execute(MainWindowImportStudents(self, filename))
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
