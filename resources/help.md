@@ -10,9 +10,8 @@
 6. Tlačítko pro setřídění dat
 
 
-## Vkládání a ukládání souborů
-Všechny soubory se vkládají přes <b>Soubor > Načíst studenty</b> resp. <b>Soubor > Načíst předměty</b>. Výsledky se exportují přes <b>Soubor > Exportovat soubory</b>. 
-Práce je nyní také možné uložit. Před uložením je potřeba setřídit data (tlačítko <b>Sort</b> nebo klávesová zkratka <b>F5</b>). Po uložení se vytvoří JSON soubor.
+## Načtení a ukládání souborů a práce
+Všechny soubory se vkládají přes <b>Soubor > Načíst studenty</b> resp. <b>Soubor > Načíst předměty</b>. Výsledky se exportují přes <b>Soubor > Exportovat soubory</b>. Práce se dá též uložit a načíst ze souborů. Načtení uložené práce funguje přes <b>Soubor > Otevřít soubor</b> a pro uložení <b>Soubor > Uložit</b> nebo <b>Uložit jako</b>.
 
 Pro otevření práce vyberte daný JSON soubor. Jednotlivé úkony mají přidělené klávesové zkratky: <b>Ctrl+S</b> pro uložení a <b>Ctrl+O</b> pro otevření.
 
@@ -46,3 +45,17 @@ Studentovi může uživatel upravit data, zamknout ho nebo smazat. Všechny akce
 
 ## Filtrace studentů
 Studenti se dají filtrovat podle toho, v jakém jsou momentálně stavu. Pokud je tlačítko v pozici **ON**, tak to znamená, že studenti dané barvy jsou zobrazeni. V opačném případě (tlačítko je ve stavu **OFF**) jsou studenti dané barvy ignorováni.
+
+## Správce studentů a předmětů
+Do verze 0.2.0 byla přidána možnost spravovat načtené studenty a předměty. Vše najdete v horní liště pod kolonkou <b>Spravovat</b>. 
+
+![student_control](:/student_control.png)
+![subject_control](:/subject_control.png)
+
+## Dodatečné funkce a export dat
+Od verze 0.3.0 může uživatel využívat 2 nové funkce: 
+- možnost provést akci zpět (<b>Ctrl+Z</b>) a vpřed (<b>Ctrl+Y</b>)
+- během ovládání aplikace vzniká bokem logovací soubor <b>seminare.log</b>, který obsahuje historii akcí provedené uživatelem; tento soubor je možno použít k rekonstrukci provedenych akcí, či zaslání vývojáři v případě objevení závady v aplikaci.
+
+Po dokončení návrhu rozvrhu a vložení studentů do jednotlivých předmětů může uživatel exportovat data.
+Akce <b>Soubor > Exportovat data (Ctrl+E)</b> vygeneruje 2 **CSV** soubory s roztřízenými daty. 

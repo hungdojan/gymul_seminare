@@ -11,5 +11,7 @@
     <file alias="filtered_days.png">screenshots/filtered_days.png</file>
     <file alias="selected_day.png">screenshots/selected_day.png</file>
     <file alias="context_menu.png">screenshots/context_menu.png</file>
+    <file alias="subject_control.png">screenshots/subject_control.png</file>
+    <file alias="student_control.png">screenshots/student_control.png</file>
 </qresource>
 </RCC>

@@ -138,7 +138,6 @@ class Student:
 
         self.__update_combination(None)
         self._possible_comb = []
-        # FIXME: optimalization??
         self.__parent.set_sorted(False)
     
 
@@ -196,13 +195,8 @@ class Student:
                     subj[1].get_subject(subj[0]).add_student(self)
     
 
-    def clear_data(self):
-        """Vynuluje vygenerovana data studenta."""
-        self._is_locked = False
-        self.required_subjects = None
-    
-
     def attach(self):
+        """Pripoji studenta do modelu."""
         self._is_locked = False
         
         # zapise studenta do pocitadla studentu
@@ -217,6 +211,7 @@ class Student:
 
 
     def detach(self):
+        """Odhlasi studenta z modelu."""
         self._is_locked = False
         # odhlasi studenta do pocitadla studentu
         if self.__required_subjects is not None:

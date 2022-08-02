@@ -139,9 +139,6 @@ class GMainWindow(QMainWindow):
         add_action('Načíst studenty', self.slt_import_students, file_menu)
         add_action('Exportovat data', self.slt_export, file_menu, 'Ctrl+E')
         file_menu.addSeparator()
-        self.auto_refresh_action = file_menu.addAction('Auto-refresh')
-        self.auto_refresh_action.setCheckable(True)
-        file_menu.addSeparator()
         add_action('Zavřít', self.close, file_menu, 'Alt+F4')
 
         # spravovat menu
