@@ -77,8 +77,9 @@ class MainWindowImportSubjects(Command):
         super().__init__()
 
     def execute(self) -> None:
-        FileLog.loggers['default'].info('CMD: Execute MainWindowImportStudents')
+        FileLog.loggers['default'].info('CMD: Execute MainWindowImportSubjects')
         self._new_subj = self._model.load_file_subjects(self._fn)
+        FileLog.loggers['default'].info(f'FE: Loaded new subjects: {self._new_subj}')
         self._gmainwindow.subject_list_updated.emit(self._new_subj)
 
     def redo(self) -> None:

@@ -381,6 +381,7 @@ class GMainWindow(QMainWindow):
         filename = dialog.selectedFiles()[0]
         try:
             self.command_builder.execute(MainWindowImportSubjects(self, filename))
+            FileLog.loggers['default'].info(f'FE: Import subjects from {filename} done')
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
@@ -390,7 +391,7 @@ class GMainWindow(QMainWindow):
             msg_box.setText('Vybraný soubor nesplňuje formát pro načtění předmětů')
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
-        FileLog.loggers['default'].info(f'FE: Import subjects from {filename} done')
+            FileLog.loggers['default'].error(f'FE: Import subjects from {filename} terminated')
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
@@ -432,6 +433,7 @@ class GMainWindow(QMainWindow):
         filename = dialog.selectedFiles()[0]
         try:
             self.command_builder.execute(MainWindowImportStudents(self, filename))
+            FileLog.loggers['default'].info(f'FE: Import students from {filename} done')
         except sort_lib.sort.Sort.FileContentFormatException:
             # chybova hlaska programu
             self.status_bar.showMessage('Nastala chyba při načítání', 5000)
@@ -440,8 +442,8 @@ class GMainWindow(QMainWindow):
             msg_box.setText('Chyba při načítání studentů\nVybraný soubor nesplňuje formát pro načtění studentů')
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
+            FileLog.loggers['default'].error(f'FE: Import students from {filename} terminated')
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
-        FileLog.loggers['default'].info(f'FE: Import students from {filename} done')
         self.subject_counter_changed.emit()
 
 
