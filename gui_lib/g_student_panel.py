@@ -147,7 +147,7 @@ class GStudentPanel(QScrollArea):
             self._base_gparent.table_view.model().sourceModel().update_model_counter)
         self._base_gparent.data_updated.disconnect(gstudent.update_content)
         self.lof_gstudents.remove(gstudent)
-        self._base_gparent.model.remove_student(gstudent.model.id)
+        self._base_gparent.model.remove_student(gstudent.model)
         gstudent.deleteLater()
 
 

@@ -10,9 +10,6 @@ class StudentControlAdd(Command):
         super().__init__()
         self._gmainwindow = gmainwindow
         self._model = model
-        self._required_subjects = model.required_subjects
-        self._possible_comb = model._possible_comb
-        self._chosen_comb = model.chosen_comb
     
     def execute(self):
         # prida studenta
@@ -30,10 +27,6 @@ class StudentControlAdd(Command):
 
     def redo(self):
         # nacteni udaju studenta
-        self._model.required_subjects = self._required_subjects
-        self._model._possible_comb = self._possible_comb
-        if self._chosen_comb is not None:
-            self._model.set_comb(self._model.possible_comb.index(self._chosen_comb))
 
         # vlozeni studenta do okna a modelu
         self._gmainwindow.model.add_student(self._model)
@@ -85,9 +78,6 @@ class StudentControlDelete(Command):
         self._model = gmainwindow.model.get_student(id_value)
 
         self._student_id = id_value
-        self._required_subjects = self._model.required_subjects
-        self._possible_comb = self._model._possible_comb
-        self._chosen_comb = self._model.chosen_comb
         # radek, na kterem se nachazi student v student_panelu
         self._index = gmainwindow.student_panel.student_index(self._model)
         super().__init__()
@@ -99,13 +89,9 @@ class StudentControlDelete(Command):
 
     def undo(self) -> None:
         # nacteni udaju studenta
-        self._model.required_subjects = self._required_subjects
-        self._model._possible_comb = self._possible_comb
-        if self._chosen_comb is not None:
-            self._model.set_comb(self._model.possible_comb.index(self._chosen_comb))
 
         # vlozeni do okna a modelu
-        self._gmainwindow.model.add_student(self._model, self._index)
+        self._gmainwindow.model.add_student(self._model)
         self._gmainwindow.student_panel.add_gstudent(self._model, self._index)
         gui_lib.g_student_control_dialog.GStudentControlDialog.add_student_to_model(self._model)
         self._gmainwindow.subject_counter_changed.emit()

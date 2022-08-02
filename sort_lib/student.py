@@ -26,7 +26,7 @@ class Student:
         # Trida studenta
         self.__class_id     = class_id
         # Seznam vybranych predmetu
-        self.__required_subjects = None
+        self.__required_subjects = tuple(map(lambda x: x if x else None, required_subjects))
         # Hlavni rodic
         self.__parent = parent
 
@@ -37,7 +37,6 @@ class Student:
         self.__chosen_comb: tuple = None
         # Zamek proti prepisu
         self._is_locked = False
-        self.required_subjects = tuple(map(lambda x: x if x else None, required_subjects))
     
 
     @property
@@ -201,7 +200,34 @@ class Student:
         """Vynuluje vygenerovana data studenta."""
         self._is_locked = False
         self.required_subjects = None
+    
 
+    def attach(self):
+        self._is_locked = False
+        
+        # zapise studenta do pocitadla studentu
+        if self.__required_subjects is not None:
+            list(map(lambda name: self.__parent.attach_student(self, name), self.__required_subjects))
+        
+        # zapise studenta do vybraneho predmetu ve dni
+        if self.__chosen_comb is not None:
+            for subj in self.__chosen_comb:
+                if subj[0] is not None:
+                    subj[1].get_subject(subj[0]).add_student(self)
+
+
+    def detach(self):
+        self._is_locked = False
+        # odhlasi studenta do pocitadla studentu
+        if self.__required_subjects is not None:
+            list(map(lambda name: self.__parent.detach_student(self, name), self.__required_subjects))
+
+        # odhlasi studenta do vybraneho predmetu ve dni
+        if self.__chosen_comb is not None:
+            for subj in self.__chosen_comb:
+                if subj[0] is not None:
+                    subj[1].get_subject(subj[0]).remove_student(self)
+    
     
     def get_qjson(self) -> dict:
         """Vygeneruje JSON objekt pro ulozeni backendu.

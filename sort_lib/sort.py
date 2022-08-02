@@ -2,6 +2,7 @@ import itertools
 import codecs
 import os.path
 import re
+from collections import OrderedDict
 from sort_lib.constants import (FILE_TYPE, FILE_DELIM, EOF, FILE_STUDENT_FORMAT_REGEX,
                                 FILE_SUBJECT_FORMAT_REGEX, OUT_DAYS, OUT_STUDENTS)
 from sort_lib.student import Student
@@ -52,7 +53,7 @@ class Sort(QObject):
     def __init__(self):
         super().__init__()
         # Seznam studentu
-        self.__students: list[Student] = []
+        self.__students: OrderedDict[str, Student] = OrderedDict()
         # Seznam dnu
         self.__days: list[Day] = []
         # Seznam predmetu
@@ -63,7 +64,7 @@ class Sort(QObject):
 
     @property
     def students(self) -> tuple[Student]:
-        return tuple(self.__students)
+        return tuple(self.__students.values())
 
 
     @property
@@ -148,7 +149,7 @@ class Sort(QObject):
         del self.__subjects[name]
     
 
-    def add_student(self, student: Student, index: int=-1) -> bool:
+    def add_student(self, student: Student) -> bool:
         """Prida studenta do seznamu.
 
         V seznamu se nesmi vyskytovat 2 studenti se stejnym ID. 
@@ -156,20 +157,18 @@ class Sort(QObject):
 
         Args:
             student (Student): Instance studenta.
-            index (int, optional): Pozice, na ktery se student vlozi. Defaults to -1.
 
         Returns:
             bool: Nenastala kolize ID studentu a novy student byl uspesne pridan.
         """
         if student is None:
             return False
-        if len([s for s in self.__students if s.id == student.id]) > 0:
+        if self.__students.get(student.id) is not None:
             return False
 
-        if index < 0:
-            self.__students.append(student)
-        else:
-            self.__students.insert(index, student)
+        self.__students[student.id] = student
+        
+        student.attach()
         self.set_sorted(False)
         return True
     
@@ -183,23 +182,32 @@ class Sort(QObject):
         Returns:
             Student: Nalezena instance studenta; None pokud nic nenasel.
         """
-        student = [student for student in self.__students
-                   if student.id == student_id]
-        return student[0] if student else None
+        return self.__students.get(student_id)
 
 
-    def remove_student(self, student_id: str) -> None:
+    def remove_student_id(self, student_id: str) -> None:
         """Maze studenta ze seznamu studentu.
 
         Args:
             student_id (str): ID studenta.
         """
-        found_students = [student for student in self.__students if student.id == student_id]
-        if len(found_students) < 1:
+        student = self.__students.get(student_id)
+        if student is None:
             return
+        
         self.set_sorted(False)
-        found_students[0].clear_data()
-        self.__students = [student for student in self.__students if student.id != student_id]
+        student.detach()
+        del self.__students[student_id]
+    
+
+    def remove_student(self, student: Student) -> None:
+        if self.__students.get(student.id) is None:
+        # if student not in self.__students:
+            return
+        student.detach()
+        self.set_sorted(False)
+        # self.__students.remove(student)
+        del self.__students[student.id]
     
 
     def attach_student(self, student: Student, subject_name: str):
@@ -265,7 +273,7 @@ class Sort(QObject):
 
                 # kontrola, zda neexistuje student se stejnym id
                 # pokud student existuje, je preskocen
-                if len([student for student in self.__students if student.id == data[0]]) > 0:
+                if self.__students.get(data[0]) is not None:
                     continue
 
                 # kontrola predmetu
@@ -274,9 +282,12 @@ class Sort(QObject):
                         new_subjects.append(subj)
                 
                 # vlozi noveho studenta do seznamu studentu
-                self.__students.append(Student(
+                student = Student(
                     data[1], data[2], data[3], tuple(data[4-len(data):]), self, data[0]
-                ))
+                )
+                student.attach()
+                # self.__students.append(student)
+                self.__students[data[0]] = student
                 new_students_id.append(data[0])
                 __class__.student_id_counter += 1
         
@@ -350,7 +361,7 @@ class Sort(QObject):
                     out.append((student.required_subjects[comb.index(i)], self.__days[i]))
             return tuple(out)
 
-        for s in self.__students:
+        for s in self.students:
             comb = []
             # Pro kazdy predmet zjisti, do jakeho dne by mohl byt zarazen
             for sub in s.required_subjects:
@@ -408,7 +419,7 @@ class Sort(QObject):
         
         # vypis seznamu zaku a jejich vybrane kombinace predmetu
         with open(os.path.join(dest_path, OUT_STUDENTS), 'w', encoding='utf-8') as f:
-            for student in self.__students:
+            for student in self.students:
                 f.write(f'{str(student)}\n')
 
 
@@ -429,7 +440,7 @@ class Sort(QObject):
         main_obj['_type'] = "Sort"
         main_obj['students'] = QJsonArray()
         # seznam json objektu Student
-        list(map(lambda x: main_obj['students'].push_back(x.get_qjson()), self.__students))
+        list(map(lambda x: main_obj['students'].push_back(x.get_qjson()), self.students))
 
         # seznam json objektu Day
         main_obj['days'] = {}
@@ -522,9 +533,10 @@ class Sort(QObject):
                 tuple(student_json['required_subjects']),
                 model,
                 student_json['id']
-
             )
-            model.__students.append(student)
+
+            model.__students[student.id] = student
+            student.attach()
             
             # nacteni validnich kombinaci
             possible_comb = []

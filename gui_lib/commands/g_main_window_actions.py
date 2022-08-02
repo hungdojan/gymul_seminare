@@ -19,7 +19,6 @@ class MainWindowImportStudents(Command):
             self._gmainwindow.subject_list_updated.emit(self._new_subjs)
 
         self._new_students: dict[int, sort_lib.student.Student] = {}
-        self._student_data: dict[sort_lib.student.Student, tuple] = {}
         # ulozeni nove pridanych studentu
         for student_id in new_ids:
             student = self._model.get_student(student_id)
@@ -27,9 +26,6 @@ class MainWindowImportStudents(Command):
                 continue
             self._new_students[self._model.students.index(student)] = student
             # ulozeni udaju jednotlivych studentu
-            self._student_data[student] = (student.required_subjects,
-                                           student._possible_comb,
-                                           student.chosen_comb)
 
         for index in self._new_students:
             self._gmainwindow.student_panel.add_gstudent(self._new_students[index]) 
@@ -44,15 +40,9 @@ class MainWindowImportStudents(Command):
         
         # nacteni smazanych studentu
         for index in self._new_students:
-            student = self._new_students[index]
-            # nacteni dat studenta
-            student.required_subjects = self._student_data[student][0]
-            student._possible_comb = self._student_data[student][1]
-            if self._student_data[student][2] is not None:
-                student.set_comb(student._possible_comb.index(self._student_data[student][2]))
 
             # vlozeni do vsech modelu a oken
-            self._model.add_student(self._new_students[index], index)
+            self._model.add_student(self._new_students[index])
             self._gmainwindow.student_panel.add_gstudent(self._new_students[index], index)
             GStudentControlDialog.add_student_to_model(self._new_students[index])
         
@@ -60,17 +50,17 @@ class MainWindowImportStudents(Command):
         self._gmainwindow.subject_counter_changed.emit()
 
     def undo(self) -> None:
+        # mazani nove pridanych studentu ze vsech modelu a oken
+        for index in self._new_students:
+            self._gmainwindow.student_panel.delete_student_id(self._new_students[index].id)
+            GStudentControlDialog.delete_student_from_model(self._new_students[index].id)
+
         # mazani nove pridanych predmetu
         if self._new_subjs:
             for subj in self._new_subjs:
                 self._model.remove_subject(subj)
             self._gmainwindow.subject_list_updated.emit(self._new_subjs)
 
-        # mazani nove pridanych studentu ze vsech modelu a oken
-        for index in self._new_students:
-            self._model.remove_student(self._new_students[index].id)
-            self._gmainwindow.student_panel.delete_student_id(self._new_students[index].id)
-            GStudentControlDialog.delete_student_from_model(self._new_students[index].id)
 
         # aktualizace pocitadla studentu na predmet
         self._gmainwindow.subject_counter_changed.emit()
