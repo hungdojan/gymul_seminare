@@ -8,7 +8,6 @@ from gui_lib.g_combobox import GComboBox
 from gui_lib.g_constants import StudentStatus
 from gui_lib.g_edit_student_dialog import GEditStudentDialog
 from gui_lib.g_combination_dialog import GCombinationDialog
-import gui_lib.g_student_control_dialog
 from gui_lib.commands.g_student_actions import *
 
 
@@ -210,8 +209,7 @@ class GStudent(QWidget):
     @Slot()
     def delete_gstudent(self) -> None:
         """Mazani tohoto studenta z programu"""
-        gui_lib.g_student_control_dialog.GStudentControlDialog.delete_student_from_model(self._model.id)
-        self._base_gparent.delete_gstudent(self)
+        self._base_gparent.base_gparent.command_builder.execute(StudentDeleteAction(self))
     
 
     @Slot(int)
