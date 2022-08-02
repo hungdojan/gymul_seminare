@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QScrollArea, QFrame, QVBoxLayout
 from PySide6.QtCore import Slot
+from gui_lib.commands.day_panel_actions import DayPanelDeleteDays
 
 import gui_lib.g_main_window
 from gui_lib.g_day import GDay
@@ -17,6 +18,11 @@ class GDayPanel(QScrollArea):
 
         # nastaveni
         self.setWidgetResizable(True)
+    
+
+    @property
+    def base_gparent(self) -> 'gui_lib.g_main_window.GMainWindow':
+        return self._base_gparent
     
 
     def _setupUI(self):
@@ -97,5 +103,5 @@ class GDayPanel(QScrollArea):
     @Slot()
     def delete_selected(self):
         """Smaze oznacene predmety."""
-        list(map(lambda x: self.delete_gday(x), self.selected_gdays))
-        self.selected_gdays.clear()
+        self._base_gparent.command_builder.execute(DayPanelDeleteDays(self))
+        self._base_gparent.view_updated.emit()

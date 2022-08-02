@@ -2,6 +2,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import QKeySequence, QPainter, QPaintEvent, QShortcut, QCloseEvent
 from PySide6.QtCore import Slot, Signal, Qt, QFile, QIODevice
 from gui_lib.g_day_panel import GDayPanel
+from gui_lib.commands.day_panel_actions import DayPanelAddDay
 
 from gui_lib.g_student_panel import GStudentPanel
 from gui_lib.g_about_dialog import GAboutDialog
@@ -464,8 +465,7 @@ class GMainWindow(QMainWindow):
     def slt_add_day(self) -> None:
         """Slot prida vygeneruje novy den"""
         self.status_bar.showMessage('Přidávám novýho den')
-        new_day = self.model.add_day()
-        self.day_panel.add_gday(new_day)
+        self.command_builder.execute(DayPanelAddDay(self))
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 
