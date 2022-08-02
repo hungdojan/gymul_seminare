@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QDialogButtonBo
 import gui_lib.g_student
 import gui_lib.g_main_window
 from gui_lib.commands.combination_dialog_action import CombinationDialogAction
+from sort_lib.file_log import FileLog
 
 class GCombinationDialog(QDialog):
 
@@ -12,6 +13,7 @@ class GCombinationDialog(QDialog):
         self._gmainwindow = gstudent.base_gparent.base_gparent
 
         self._setupUI()
+        FileLog.loggers['default'].info('FE: GCombinationDialog window opened')
     
 
     @property
@@ -60,5 +62,11 @@ class GCombinationDialog(QDialog):
         chosen_comb = self.gstudent.model.possible_comb[self.subjs.currentIndex() - 1] \
                       if self.subjs.currentIndex() > 0 else None
         if chosen_comb != self.gstudent.model.chosen_comb:
+            FileLog.loggers['default'].info(f'FE: Change student "{self.gstudent.model.id}" chosen combination: {self.gstudent.model.chosen_comb} -> {chosen_comb}')
             self._gmainwindow.command_builder.execute(CombinationDialogAction(self))
+        FileLog.loggers['default'].info('GCombinationDialog window accepted')
         super().accept()
+    
+    def reject(self) -> None:
+        FileLog.loggers['default'].info('GCombinationDialog window rejected')
+        super().reject()

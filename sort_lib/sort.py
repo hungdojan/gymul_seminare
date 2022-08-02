@@ -1,6 +1,6 @@
 import itertools
 import codecs
-import os.path
+import os
 import re
 from collections import OrderedDict
 from sort_lib.constants import (FILE_TYPE, FILE_DELIM, EOF, FILE_STUDENT_FORMAT_REGEX,
@@ -286,7 +286,6 @@ class Sort(QObject):
                     data[1], data[2], data[3], tuple(data[4-len(data):]), self, data[0]
                 )
                 student.attach()
-                # self.__students.append(student)
                 self.__students[data[0]] = student
                 new_students_id.append(data[0])
                 __class__.student_id_counter += 1
@@ -396,12 +395,9 @@ class Sort(QObject):
 
         Raises:
             Sort.FilePathException: Cesta ke slozce neexistuje.
-            Sort.DataNotSortedException: Data nejsou pripravena pro export.
         """
         if dest_path is None or not os.path.isdir(dest_path):
             raise Sort.FilePathException('Invalid output directory path')
-        if not self._is_sorted:
-            raise Sort.DataNotSortedException('Cannot export unsorted data')
         
         # vypis rozdeleni studentu do predmetu podle jednotlivych dnu
         with open(os.path.join(dest_path, OUT_DAYS), 'w', encoding='utf-8') as f:
@@ -515,11 +511,11 @@ class Sort(QObject):
             if main_obj['days'][day_index]['_type'] != 'Day':
                 raise Sort.JsonFileCorruptedException('JSON error: expected Day object')
             day = model.add_day()
+
             for subject in main_obj['days'][day_index]['subjects']:
                 if subject['_type'] != 'Subject':
                     raise Sort.JsonFileCorruptedException('JSON error: expected Subject object')
                 day.add_subject_name(subject['name'])
-            pass
 
 
         # studenti
@@ -550,5 +546,5 @@ class Sort(QObject):
             if len(student_json['chosen_comb']) > 1:
                 selected_comb = tuple([comb if comb != 'None' else None for comb in student_json['chosen_comb']])
                 student.set_comb(student.possible_comb.index(selected_comb))
-        
+
         return model

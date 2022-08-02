@@ -87,12 +87,7 @@ class GStudent(QWidget):
 
     def mousePressEvent(self, a0: QMouseEvent) -> None:
         """Prepsana funkce reakce na udalost mysi."""
-        if a0.button() == Qt.MouseButton.MiddleButton:
-            # uzamceni studenta
-            self.setProperty('isSelected', not self.property('isSelected'))
-            self._base_gparent.select_gstudent(self, self.property('isSelected'))
-            self.update_style()
-        elif a0.button() == Qt.MouseButton.LeftButton:
+        if a0.button() == Qt.MouseButton.LeftButton:
             # vyber kombinaci
             if not self.model.is_locked:
                 GCombinationDialog(self).exec()

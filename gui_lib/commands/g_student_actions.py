@@ -2,6 +2,7 @@ from sort_lib.command import Command
 
 import gui_lib.g_student
 import gui_lib.g_student_control_dialog
+from sort_lib.file_log import FileLog
 
 class StudentRequiredSubjectsChange(Command):
 
@@ -15,6 +16,8 @@ class StudentRequiredSubjectsChange(Command):
         self._gmainwindow = parent.base_gparent.base_gparent
 
     def execute(self) -> None:
+        FileLog.loggers['default'].info('CMD: Execute StudentRequiredSubjectsChange')
+        FileLog.loggers['default'].info(f'FE: Change student "{self._model.id}" required subjects: {self._old_comb} -> {self._new_comb}')
         self._model.required_subjects = self._new_comb
         self._gmainwindow.view_updated.emit()
         self._parent.required_subjects_changed.emit()
@@ -49,6 +52,7 @@ class StudentDeleteAction(Command):
         self._index = parent.base_gparent.student_index(self._model)
 
     def execute(self) -> None:
+        FileLog.loggers['default'].info('CMD: Execute StudentDeleteAction')
         gui_lib.g_student_control_dialog.GStudentControlDialog.delete_student_from_model(self._model.id)
         self._parent._base_gparent.delete_gstudent(self._parent)
 

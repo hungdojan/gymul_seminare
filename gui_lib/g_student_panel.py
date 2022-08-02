@@ -4,6 +4,7 @@ from PySide6.QtCore import Slot
 from gui_lib.g_student import GStudent
 import gui_lib.g_main_window
 from gui_lib.g_constants import StudentStatus
+from sort_lib.file_log import FileLog
 
 from sort_lib.student import Student
 
@@ -14,8 +15,6 @@ class GStudentPanel(QScrollArea):
         self._base_gparent = base_gparent
         # Seznam vsech g-studentu v ramci
         self.lof_gstudents: list[GStudent] = []
-        # Seznam oznacenych studentu        
-        self.selected_students: list[GStudent] = []
         self._setupUI()
 
         # nastaveni
@@ -56,6 +55,7 @@ class GStudentPanel(QScrollArea):
             return None
 
         gstudent = GStudent(student, self)
+        FileLog.loggers['default'].info(f'FE: Adding GStudent "{gstudent.model}"')
 
         # nastaveni signalu-slotu
         gstudent.required_subjects_changed.connect(
@@ -69,29 +69,12 @@ class GStudentPanel(QScrollArea):
             self.main_frame.layout().insertWidget(index, gstudent)
         return gstudent
     
-
-    def select_gstudent(self, gstudent: GStudent, is_selected: bool) -> None:
-        """Spravuje oznacene GStudenty
-
-        Args:
-            gstudent (GStudent): Instance GStudent, ktereho se Všechny operace tyka
-            is_selected (bool): Pravdivostni hodnota, zda byl objekt oznacen ci ne
-        """
-        if is_selected:
-            self.selected_students.append(gstudent)
-        else:
-            try:
-                self.selected_students.remove(gstudent)
-            except:
-                pass
-    
     
     def clear(self) -> None:
         """Smaze vsechny studenty z ramce a modelu."""
         for i in range(len(self.lof_gstudents) - 1, -1, -1):
             self.delete_gstudent(self.lof_gstudents[i])
         self.lof_gstudents.clear()
-        self.selected_students.clear()
     
 
     def update_student(self, student_id: str):
@@ -148,17 +131,9 @@ class GStudentPanel(QScrollArea):
         self._base_gparent.data_updated.disconnect(gstudent.update_content)
         self.lof_gstudents.remove(gstudent)
         self._base_gparent.model.remove_student(gstudent.model)
+        FileLog.loggers['default'].info(f'FE: GStudent "{gstudent.model}" deleted')
         gstudent.deleteLater()
 
-
-    @Slot()
-    def delete_selected(self) -> None:
-        """Vymaze oznacene studenty."""
-        self._base_gparent.status_bar.showMessage('Mažu studenty')
-        list(map(lambda x: self.delete_gstudent(x), self.selected_gstudents))
-        self.selected_students.clear()
-        self._base_gparent.status_bar.showMessage('Všechny operace dokončené', 6000)
-    
 
     @Slot()
     def filter_students(self) -> None:

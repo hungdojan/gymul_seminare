@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextBrowser
 from PySide6.QtCore import QFile, QIODevice, Qt
 import gui_lib.rc
+from sort_lib.file_log import FileLog
 
 class GHelpDialog(QDialog):
     """Trida pro okno s napovedou."""
@@ -25,4 +26,4 @@ class GHelpDialog(QDialog):
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(0,0,0,0)
         self.layout().addWidget(content_tb)
-
+        FileLog.loggers['default'].info('FE: GAboutDialog window opened')

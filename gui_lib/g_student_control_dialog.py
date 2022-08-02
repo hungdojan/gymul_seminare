@@ -20,6 +20,7 @@ class GStudentControlDialog(QDialog):
             self._setupUI()
             # pravdivosti hodnota znacici, o jakou akci se jedna (pridat/upravit)
             self._to_add_student = new_student
+            self.setWindowTitle('Upravit studenta')
         
         @property
         def model(self) -> Student:
@@ -85,6 +86,7 @@ class GStudentControlDialog(QDialog):
                 # pri uprave dat akci vyvolava tento dialog (GStudentControlDialogEdit)
                 # vlozi akci do command builderu pro moznost undo/redo
                 self._gmainwindow.command_builder.execute(StudentControlEdit(self))
+                FileLog.loggers['default'].info(f'FE: Student "{self.model}" was successfully edited')
             super().accept()
         
         @Slot()
@@ -220,6 +222,7 @@ class GStudentControlDialog(QDialog):
             __class__.__init_model(self._base_gparent.model)
         self._changed = []
         self._setupUI()
+        FileLog.loggers['default'].info('FE: GStudentControlDialog window opened')
         self.setWindowTitle('Správce studentů')
 
     
@@ -235,7 +238,7 @@ class GStudentControlDialog(QDialog):
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.setFocusPolicy(Qt.NoFocus)
         self.table_view.setSortingEnabled(True)
-        self.table_view.doubleClicked.connect(lambda _: self.edit_student())
+        self.table_view.doubleClicked.connect(lambda: self.edit_student())
 
         # tridici model
         pm = ProxyModel()
@@ -290,6 +293,7 @@ class GStudentControlDialog(QDialog):
             id_value = self.table_view.model().data(
                             self.table_view.model().index(index[0], 0, QModelIndex()))
             student = self._base_gparent.model.get_student(str(id_value))
+            FileLog.loggers['default'].info(f'FE: GStudent "{student}" is selected to edit')
             __class__.GStudentControlEditDialog(student, self._base_gparent).exec()
 
 

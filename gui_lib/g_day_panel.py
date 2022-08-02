@@ -6,6 +6,7 @@ import gui_lib.g_main_window
 from gui_lib.g_day import GDay
 
 from sort_lib.day import Day
+from sort_lib.file_log import FileLog
 
 class GDayPanel(QScrollArea):
     
@@ -44,6 +45,7 @@ class GDayPanel(QScrollArea):
         Returns:
             GDay: Instance vytvoreneho g-dne.
         """
+        FileLog.loggers['default'].info('FE: Create GDay')
         gday = GDay(day, self)
 
         self._base_gparent.day_buttons['filter'].toggled.connect(gday.filter_toggle)
@@ -71,6 +73,7 @@ class GDayPanel(QScrollArea):
                 self.selected_gdays.remove(gday)
             except ValueError:
                 pass
+        FileLog.loggers['default'].info(f'FE: Selection status of GDay {gday.model} changed')
     
 
     def clear(self):
@@ -92,6 +95,7 @@ class GDayPanel(QScrollArea):
         if gday not in self.lof_gdays:
             return
 
+        FileLog.loggers['default'].info(f'FE: Delete GDay "{gday.model}"')
         gday.disconnect()
         self._base_gparent.day_buttons['filter'].toggled.disconnect(gday.filter_toggle)
         self._base_gparent.subject_list_updated.disconnect(gday.update_list)

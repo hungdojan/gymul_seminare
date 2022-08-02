@@ -2,6 +2,9 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QFormLayout, QFrame,
 from PySide6.QtGui import QPainter, QPaintEvent
 from PySide6.QtCore import Qt
 
+from sort_lib.file_log import FileLog
+import gui_lib
+
 class GAboutDialog(QDialog):
     
     def __init__(self, parent):
@@ -13,6 +16,7 @@ class GAboutDialog(QDialog):
 
         self.setLayout(QVBoxLayout())
         self._setupUI()
+        FileLog.loggers['default'].info('FE: GAboutDialog window opened')
     
 
     def _setupUI(self):
@@ -49,7 +53,7 @@ class GAboutDialog(QDialog):
         gh_lbl.setAlignment(Qt.AlignCenter)
         form_frame.layout().addRow(QLabel('Github page:'), gh_lbl)
         
-        version_lbl = QLabel('0.2.0')
+        version_lbl = QLabel(gui_lib.__version__)
         version_lbl.setAlignment(Qt.AlignCenter)
         form_frame.layout().addRow(QLabel('Version:'), version_lbl)
 

@@ -5,6 +5,7 @@ from PySide6.QtCore import QModelIndex, Qt, Slot
 
 import gui_lib.g_main_window
 from gui_lib.commands.subject_control_action import SubjectControlAction
+from sort_lib.file_log import FileLog
 
 class GSubjectControlDialog(QDialog):
 
@@ -16,6 +17,7 @@ class GSubjectControlDialog(QDialog):
         self._copy_model()
         self._changes: list[str] = []
         self._setupUI()
+        FileLog.loggers['default'].info('FE: GSubjectControlDialog window opened')
         self.setWindowTitle('Správce předmětů')
     
     @property
@@ -73,7 +75,13 @@ class GSubjectControlDialog(QDialog):
         self._subject_model.deleteLater()
         if self._changes:
             self._base_gparent.command_builder.execute(SubjectControlAction(self))
+        FileLog.loggers['default'].info(f'FE: Subjects {self._changes} were added/removed window accepted')
         super().accept()
+    
+
+    def reject(self) -> None:
+        FileLog.loggers['default'].info('FE: GSubjectControlDialog window rejected')
+        return super().reject()
     
 
     @Slot()

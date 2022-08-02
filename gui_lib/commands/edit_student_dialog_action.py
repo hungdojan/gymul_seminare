@@ -2,6 +2,7 @@ from sort_lib.command import Command
 
 import gui_lib.g_edit_student_dialog
 from gui_lib.g_student_control_dialog import GStudentControlDialog
+from sort_lib.file_log import FileLog
 
 class EditStudentDialogAction(Command):
 
@@ -14,6 +15,7 @@ class EditStudentDialogAction(Command):
 
     def execute(self) -> None:
         # aktualizuje osobni udaje studentu
+        FileLog.loggers['default'].info('CMD: Execute EditStudentDialogAction')
         self._model.first_name = self._fname[1]
         self._model.last_name = self._lname[1]
         self._model.class_id = self._class_id[1]

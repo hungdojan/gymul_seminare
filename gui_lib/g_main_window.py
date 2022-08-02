@@ -17,6 +17,7 @@ from gui_lib.g_savedialog import GSaveDialog
 
 import gui_lib.rc   # generated resource file
 import sort_lib.sort
+from sort_lib.file_log import FileLog
 from sort_lib.command import CommandBuilder
 
 class GMainWindow(QMainWindow):
@@ -280,11 +281,13 @@ class GMainWindow(QMainWindow):
                 return
         elif reply == QMessageBox.RejectRole:
             return
+        FileLog.loggers['default'].info('FE: --- New session start ---')
         self.init_new_project(sort_lib.sort.Sort())
 
 
     @Slot()
     def slt_open_file(self) -> None:
+        FileLog.loggers['default'].info(f'FE: Load save file')
         save_dialog = GSaveDialog(self, 'Uložit', 'Chcete uložit práci?')
         save_dialog.exec()
         reply = save_dialog.buttonRole(save_dialog.clickedButton())
@@ -292,6 +295,7 @@ class GMainWindow(QMainWindow):
             if not self.slt_save():
                 return
         elif reply == QMessageBox.RejectRole:
+            FileLog.loggers['default'].info(f'FE: Load save file terminated')
             return
 
         self.status_bar.showMessage('Otevírám soubor s uloženou prací')
@@ -299,6 +303,7 @@ class GMainWindow(QMainWindow):
         filename = QFileDialog.getOpenFileName(self, "Otevřít soubor", "", "JSON soubor (*.json)")
         if not filename[0]:
             self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
+            FileLog.loggers['default'].info(f'FE: Load save file terminated')
             return
         try:
             model = sort_lib.sort.Sort.load_save_file(filename[0])
@@ -313,17 +318,19 @@ class GMainWindow(QMainWindow):
             msg_box.exec()
             return
 
+        FileLog.loggers['default'].info('FE: --- New session start ---')
         self.init_new_project(model)
         
         # pridani dat
         self._model = model
+        sort_lib.sort.Sort.student_id_counter = len(model.students) + 1
         list(map(lambda x: self.student_panel.add_gstudent(x), self._model.students))
         list(map(lambda x: self.day_panel.add_gday(x), self._model.days))
 
         self.view_updated.emit()
         self.subject_list_updated.emit(self._model.subjects.keys())
-        # TODO: self.subject_counter_changed.emit()
         self.sort_button.sort_button_update(self._model.is_sorted)
+        FileLog.loggers['default'].info(f'FE: Load save file {filename[0]} done')
         
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
@@ -335,6 +342,7 @@ class GMainWindow(QMainWindow):
 
         self.status_bar.showMessage('Ukládám práci do souboru')
         self._model.save_to_json()
+        FileLog.loggers['default'].info(f'FE: Store data to file {self._model.file_path} done')
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
         return True
     
@@ -347,18 +355,21 @@ class GMainWindow(QMainWindow):
         # otevreni okna pro vyber souboru
         if not filename[0]:
             self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
+            FileLog.loggers['default'].info(f'FE: Store data to file terminated')
             return False
         fname = filename[0] if filename[0].endswith('.json') \
                             else f'{filename[0]}.json'
 
         self._model.save_to_json(fname)
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
+        FileLog.loggers['default'].info(f'FE: Store data to file {fname} done')
         return True
 
 
     @Slot()
     def slt_import_subjects(self) -> None:
         """Slot pro nacteni souboru s predmety"""
+        FileLog.loggers['default'].info(f'FE: Import subjects')
         dialog = QFileDialog(self)
         dialog.setWindowTitle('Importovat předměty')
         dialog.setNameFilter('CSV soubor (*.csv)')
@@ -368,6 +379,7 @@ class GMainWindow(QMainWindow):
         self.status_bar.showMessage('Načítám soubor s předměty')
         if not dialog.exec():
             self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
+            FileLog.loggers['default'].info(f'FE: Import subjects terminated')
             return
         filename = dialog.selectedFiles()[0]
         try:
@@ -381,12 +393,14 @@ class GMainWindow(QMainWindow):
             msg_box.setText('Vybraný soubor nesplňuje formát pro načtění předmětů')
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
+        FileLog.loggers['default'].info(f'FE: Import subjects from {filename} done')
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
 
 
     @Slot()
     def slt_export(self) -> None:
         """Slot pro vytvoreni vyslednych souboru"""
+        FileLog.loggers['default'].info(f'FE: Export data')
         dialog = QFileDialog(self)
         dialog.setWindowTitle('Exportovat data')
         dialog.setFileMode(QFileDialog.FileMode.Directory)
@@ -395,25 +409,18 @@ class GMainWindow(QMainWindow):
         self.status_bar.showMessage('Exportuju data')
         if not dialog.exec():
             self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
+            FileLog.loggers['default'].info(f'FE: Export data terminated')
             return
         dirname = dialog.selectedFiles()[0]
-        try:
-            self.model.export_data(dirname)
-        except sort_lib.sort.Sort.DataNotSortedException:
-            # chybova hlaska pro nesetrizena data
-            self.status_bar.showMessage('Nastala chyba při exportu', 5000)
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            # FIXME: update warning text
-            msg_box.setWindowTitle('Nesetřízená data')
-            msg_box.setText('Nelze exportovat zastaralá data\nPřed exportem je potřeba data setřídit')
-            msg_box.exec()
+        self.model.export_data(dirname)
+        FileLog.loggers['default'].info(f'FE: Export data to {dirname} done')
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
     
 
     @Slot()
     def slt_import_students(self) -> None:
         """Slot pro nacteni souboru se studenty"""
+        FileLog.loggers['default'].info(f'FE: Import students')
         dialog = QFileDialog(self)
         dialog.setWindowTitle('Importovat studenty')
         dialog.setNameFilter('CSV soubor (*.csv)')
@@ -423,6 +430,7 @@ class GMainWindow(QMainWindow):
         self.status_bar.showMessage('Načítám soubor se studenty')
         if not dialog.exec():
             self.status_bar.showMessage('Úloha byla předčasně ukončena', 5000)
+            FileLog.loggers['default'].info(f'FE: Import students terminated')
             return
         filename = dialog.selectedFiles()[0]
         try:
@@ -436,13 +444,13 @@ class GMainWindow(QMainWindow):
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)
+        FileLog.loggers['default'].info(f'FE: Import students from {filename} done')
         self.subject_counter_changed.emit()
 
 
     @Slot()
     def slt_close_app(self) -> None:
         """Funkce ukoncuje program"""
-        # TODO: ask to save progress
         self.status_bar.showMessage('Zavírám aplikaci')
         self.close()
 
@@ -513,3 +521,4 @@ class GMainWindow(QMainWindow):
             event.ignore()
             return
         super().closeEvent(event)
+        FileLog.loggers['default'].info('Session end')

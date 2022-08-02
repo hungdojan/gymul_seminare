@@ -5,6 +5,8 @@ import gui_lib.g_main_window
 from gui_lib.g_student_control_dialog import GStudentControlDialog
 import sort_lib.student
 
+from sort_lib.file_log import FileLog
+
 class MainWindowImportStudents(Command):
 
     def __init__(self, parent: 'gui_lib.g_main_window.GMainWindow', filename: str) -> None:
@@ -13,6 +15,7 @@ class MainWindowImportStudents(Command):
         self._fn = filename
 
     def execute(self) -> None:
+        FileLog.loggers['default'].info('CMD: Execute MainWindowImportStudents')
         new_ids, self._new_subjs = self._model.load_file_students(self._fn)
         # nacteni novych predmetu
         if len(self._new_subjs) > 0:
@@ -74,6 +77,7 @@ class MainWindowImportSubjects(Command):
         super().__init__()
 
     def execute(self) -> None:
+        FileLog.loggers['default'].info('CMD: Execute MainWindowImportStudents')
         self._new_subj = self._model.load_file_subjects(self._fn)
         self._gmainwindow.subject_list_updated.emit(self._new_subj)
 

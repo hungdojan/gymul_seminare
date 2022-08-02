@@ -1,6 +1,7 @@
 from sort_lib.command import Command
 
 import gui_lib.g_subject
+from sort_lib.file_log import FileLog
 
 class SelectSubjectAction(Command):
 
@@ -13,11 +14,11 @@ class SelectSubjectAction(Command):
         super().__init__()
 
     def execute(self) -> None:
+        FileLog.loggers['default'].info('CMD: Execute SelectSubjectAction')
         self._parent.setProperty('isSelected', not self._parent.property('isSelected'))
 
         # meni zobrazeni g-predmetu
         if self._parent.property('isSelected'):
-            # TODO: preserve model with students??
             self._parent.model = self._parent.base_gparent.model.add_subject_name(self._parent.name)
         else:
             self._parent.base_gparent.model.remove_subject(self._parent.name)

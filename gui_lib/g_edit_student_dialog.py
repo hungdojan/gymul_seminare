@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QDialog, QFormLayout, QLineEdit, QVBoxLayout, QDialogButtonBox
 import gui_lib.g_student
 from gui_lib.commands.edit_student_dialog_action import EditStudentDialogAction
+from sort_lib.file_log import FileLog
 
 class GEditStudentDialog(QDialog):
     """Trida pro okno upravujici studentovy osobni data."""
@@ -13,6 +14,7 @@ class GEditStudentDialog(QDialog):
         self.setLayout(QVBoxLayout())
 
         self._setupUI()
+        FileLog.loggers['default'].info('FE: GEditStudentDialog window opened')
     
 
     def _setupUI(self):
@@ -40,4 +42,9 @@ class GEditStudentDialog(QDialog):
         """Akce po uspesnem ukonceni dialogoveho okna"""
         gmainwindow = self.gstudent.base_gparent.base_gparent
         gmainwindow.command_builder.execute(EditStudentDialogAction(self))
+        FileLog.loggers['default'].info('FE: GEditStudentDialog window accepted')
         super().accept()
+    
+    def reject(self) -> None:
+        FileLog.loggers['default'].info('FE: GEditStudentDialog window rejected')
+        return super().reject()

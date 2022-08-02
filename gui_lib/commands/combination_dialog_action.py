@@ -1,5 +1,6 @@
 from sort_lib.command import Command
 import gui_lib.g_combination_dialog
+from sort_lib.file_log import FileLog
 
 class CombinationDialogAction(Command):
 
@@ -10,6 +11,7 @@ class CombinationDialogAction(Command):
         self.new_index = parent.subjs.currentIndex() - 1
 
     def execute(self) -> None:
+        FileLog.loggers['default'].info('CMD: Execute CombinationDialogAction')
         self._parent.gstudent.model.set_comb(self.new_index)
         self._parent.gmainwindow.view_updated.emit()
 

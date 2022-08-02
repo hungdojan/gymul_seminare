@@ -1,6 +1,8 @@
 from PySide6.QtCore import QObject, Slot
 from abc import ABC, abstractmethod
 
+from sort_lib.file_log import FileLog
+
 class Command(ABC):
 
     @abstractmethod
@@ -44,6 +46,7 @@ class CommandBuilder(QObject):
         if not self.redo_stack:
             return
 
+        FileLog.loggers['default'].info('CMD: Redo')
         cmd = self.redo_stack.pop()
         cmd.redo()
         self.undo_stack.append(cmd)
@@ -53,6 +56,7 @@ class CommandBuilder(QObject):
         """Provede krok zpet."""
         if not self.undo_stack:
             return
+        FileLog.loggers['default'].info('CMD: Undo')
         cmd = self.undo_stack.pop()
         cmd.undo()
         self.redo_stack.append(cmd)

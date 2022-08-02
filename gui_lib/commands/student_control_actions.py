@@ -1,4 +1,5 @@
 from sort_lib.command import Command
+from sort_lib.file_log import FileLog
 from sort_lib.student import Student
 
 import gui_lib.g_main_window
@@ -13,6 +14,7 @@ class StudentControlAdd(Command):
     
     def execute(self):
         # prida studenta
+        FileLog.loggers['default'].info('CMD: Execute StudentControlAdd')
         self._gmainwindow.model.add_student(self._model)
         self._gmainwindow.student_panel.add_gstudent(self._model)
         gui_lib.g_student_control_dialog.GStudentControlDialog.add_student_to_model(self._model)
@@ -49,6 +51,7 @@ class StudentControlEdit(Command):
 
 
     def execute(self) -> None:
+        FileLog.loggers['default'].info('CMD: Execute StudentControlEdit')
         self.model.first_name = self.fname[1]
         self.model.last_name = self.lname[1]
         self.model.class_id = self.class_id[1]
@@ -83,14 +86,13 @@ class StudentControlDelete(Command):
         super().__init__()
 
     def execute(self) -> None:
+        FileLog.loggers['default'].info('CMD: Execute StudentControlDelete')
         self._gmainwindow.student_panel.delete_student_id(self._student_id)
         gui_lib.g_student_control_dialog.GStudentControlDialog.delete_student_from_model(self._student_id)
         self._gmainwindow.subject_counter_changed.emit()
 
     def undo(self) -> None:
-        # nacteni udaju studenta
-
-        # vlozeni do okna a modelu
+        # vlozeni studenta do okna a modelu
         self._gmainwindow.model.add_student(self._model)
         self._gmainwindow.student_panel.add_gstudent(self._model, self._index)
         gui_lib.g_student_control_dialog.GStudentControlDialog.add_student_to_model(self._model)

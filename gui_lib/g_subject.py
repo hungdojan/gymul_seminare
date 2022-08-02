@@ -1,3 +1,4 @@
+from sort_lib.file_log import FileLog
 from sort_lib.subject import Subject
 import gui_lib.g_day 
 from gui_lib.commands.g_subject_actions import SelectSubjectAction
@@ -59,6 +60,7 @@ class GSubject(QFrame):
         # leve tlacitko na mysi prepina stav oznaceni predmetu
         if event.button() == Qt.MouseButton.LeftButton:
             self._base_gparent._base_gparent._base_gparent.command_builder.execute(SelectSubjectAction(self))
+            FileLog.loggers['default'].info(f'FE: Subject {self._name}\'s selection status changed to {self.property("isSelected")}')
         else:
             super().mousePressEvent(event)
     

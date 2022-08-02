@@ -108,3 +108,6 @@ class Day:
     def clear_subjects(self):
         """Vymaze vsechna data ulozene v jednotlivych predmetech."""
         list(map(lambda x: x.clear_data(), self.__subjects))
+    
+    def __str__(self) -> str:
+        return f'Day: {[subj.name for subj in self.subjects]}'
