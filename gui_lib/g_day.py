@@ -112,6 +112,10 @@ class GDay(QFrame):
         super().paintEvent(event)
     
 
+    def __str__(self):
+        return f'GDay no. {self._base_gparent.lof_gdays.index(self) + 1} "{self.model}"'
+    
+
     @Slot(list)
     def update_list(self, l: list) -> None:
         for name in l:

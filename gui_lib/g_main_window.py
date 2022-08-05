@@ -497,6 +497,7 @@ class GMainWindow(QMainWindow):
     def slt_sort(self) -> None:
         """Slot provede setrizeni dat"""
         self.status_bar.showMessage('Provádím třídění studentů')
+        FileLog.loggers['default'].info('FE: Sort data')
         self.model.sort_data()
         self.view_updated.emit()
         self.status_bar.showMessage('Všechny operace dokončené', 6000)

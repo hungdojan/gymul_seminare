@@ -55,7 +55,7 @@ class GStudentPanel(QScrollArea):
             return None
 
         gstudent = GStudent(student, self)
-        FileLog.loggers['default'].info(f'FE: Adding GStudent "{gstudent.model}"')
+        FileLog.loggers['default'].info(f'FE: Add {gstudent}')
 
         # nastaveni signalu-slotu
         gstudent.required_subjects_changed.connect(
@@ -131,7 +131,7 @@ class GStudentPanel(QScrollArea):
         self._base_gparent.data_updated.disconnect(gstudent.update_content)
         self.lof_gstudents.remove(gstudent)
         self._base_gparent.model.remove_student(gstudent.model)
-        FileLog.loggers['default'].info(f'FE: GStudent "{gstudent.model}" deleted')
+        FileLog.loggers['default'].info(f'FE: {gstudent} deleted')
         gstudent.deleteLater()
 
 

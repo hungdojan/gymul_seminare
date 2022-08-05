@@ -278,7 +278,7 @@ class Sort(QObject):
 
                 # kontrola predmetu
                 for subj in data[4-len(data):]:
-                    if subj and self.__subjects.get(subj) is None:
+                    if subj and self.__subjects.get(subj) is None and subj not in new_subjects:
                         new_subjects.append(subj)
                 
                 # vlozi noveho studenta do seznamu studentu

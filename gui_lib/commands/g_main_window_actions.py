@@ -19,6 +19,7 @@ class MainWindowImportStudents(Command):
         new_ids, self._new_subjs = self._model.load_file_students(self._fn)
         # nacteni novych predmetu
         if len(self._new_subjs) > 0:
+            FileLog.loggers['default'].info(f'FE: Add new subjects: {self._new_subjs}')
             self._gmainwindow.subject_list_updated.emit(self._new_subjs)
 
         self._new_students: dict[int, sort_lib.student.Student] = {}

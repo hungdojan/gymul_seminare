@@ -139,6 +139,10 @@ class GStudent(QWidget):
         self.update_content()
     
 
+    def __str__(self):
+        return f'GStudent "{self._model}"'
+    
+
     @Slot()
     def update_content(self) -> None:
         """Aktualizuje hodnotu 'status'"""
