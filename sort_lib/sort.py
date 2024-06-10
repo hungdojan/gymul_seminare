@@ -478,7 +478,7 @@ class Sort(QObject):
                     out.append((None, None))
                 else:
                     out.append((comb[i], model.__days[i]))
-            return out
+            return tuple(out)
 
         try:
             with codecs.open(path, "r", encoding="utf-8") as f:

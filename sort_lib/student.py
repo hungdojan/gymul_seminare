@@ -32,7 +32,7 @@ class Student:
 
         # Seznam vsech moznych kombinaci predmetu,
         # ktery si student muze zapsat
-        self._possible_comb = dict()
+        self._possible_comb: list[tuple] = list
         # Vybrana kombinace studenta
         self.__chosen_comb: tuple = None
         # Zamek proti prepisu
@@ -96,15 +96,9 @@ class Student:
     
     @possible_comb.setter
     def possible_comb(self, value: list):
-        # pokud je student zamceny jsou 3 moznosti, 
-        # jak bude reagovat na aktualizaci seznamu moznych kombinaci
-        # 1. nema zadnou moznost 
-        #   -> zrusi se vybrana kombinace; odemkne se
-        # 2. ma jedno nebo vice moznosti, ale momentalni kombinace v ni neni
-        #   -> zrusi se vybrana kombinace; odemkne se
-        # 3. ma jedno nebo vice moznosti; momentalni kombinace tam je
-        #   -> vyber a zamek se ponechaji, aktualizuje se jenom seznam moznych kombinaci
-        if not self._is_locked or len(value) == 0 or self.__chosen_comb not in value:
+        # pokud pri trideni dojde ke zmene seznamu moznych kombinaci
+        # pak se zamek resetuje a dojde k vynulovani nastavenych hodnot
+        if not self._is_locked or value != self._possible_comb:
             self._is_locked = False
             self.__update_combination(None)
             self.__parent.set_sorted(False)
@@ -137,7 +131,7 @@ class Student:
             list(map(lambda name: self.__parent.attach_student(self, name), self.__required_subjects))
 
         self.__update_combination(None)
-        self._possible_comb = []
+        self._possible_comb = list()
         self.__parent.set_sorted(False)
     
 
@@ -190,6 +184,7 @@ class Student:
         self.__chosen_comb = value
         # zapisuje se na vybranou kombinaci
         if self.__chosen_comb is not None:
+            self.__chosen_comb = tuple(self.__chosen_comb)
             for subj in self.__chosen_comb:
                 if subj[0] is not None:
                     subj[1].get_subject(subj[0]).add_student(self)
