@@ -1,4 +1,5 @@
 import itertools
+import json
 import codecs
 import os
 import re
@@ -400,7 +401,7 @@ class Sort(QObject):
             raise Sort.FilePathException('Invalid output directory path')
         
         # vypis rozdeleni studentu do predmetu podle jednotlivych dnu
-        with open(os.path.join(dest_path, OUT_DAYS), 'w', encoding='utf-8') as f:
+        with codecs.open(os.path.join(dest_path, OUT_DAYS), 'w', encoding='utf-8') as f:
             # vypis dnu
             for i in range(len(self.__days)):
                 f.write(f'Den {i+1}\n')
@@ -414,7 +415,7 @@ class Sort(QObject):
                 f.write('\n')
         
         # vypis seznamu zaku a jejich vybrane kombinace predmetu
-        with open(os.path.join(dest_path, OUT_STUDENTS), 'w', encoding='utf-8') as f:
+        with codecs.open(os.path.join(dest_path, OUT_STUDENTS), 'w', encoding='utf-8') as f:
             for student in self.students:
                 f.write(f'{str(student)}\n')
 
@@ -434,25 +435,18 @@ class Sort(QObject):
 
         main_obj = {}
         main_obj['_type'] = "Sort"
-        main_obj['students'] = QJsonArray()
-        # seznam json objektu Student
-        list(map(lambda x: main_obj['students'].push_back(x.get_qjson()), self.students))
+        main_obj['students'] = [x.to_dict() for x in self.students]
 
         # seznam json objektu Day
         main_obj['days'] = {}
         for i in range(len(self.__days)):
-            main_obj['days'][f'{i+1}'] = self.__days[i].get_qjson()
+            main_obj['days'][f'{i+1}'] = self.__days[i].to_dict()
             
         # seznam predmetu
-        main_obj['subjects'] = QJsonArray()
-        list(map(lambda x: main_obj['subjects'].push_back(x), sorted(self.__subjects.keys())))
+        main_obj['subjects'] = list(sorted(self.__subjects.keys()))
 
-        json_doc = QJsonDocument()
-        json_doc.setObject(main_obj)
-
-        content = str(json_doc.toJson(), 'utf-8')
-        with open(self._file_path, 'w') as f:
-            f.write(content)
+        with open(self._file_path, "w") as f:
+            f.write(json.dumps(main_obj, indent=4))
         
 
 
@@ -486,18 +480,16 @@ class Sort(QObject):
                     out.append((comb[i], model.__days[i]))
             return out
 
-        # cteni ze souboru
-        f = QFile(path)
-        f.open(QIODevice.OpenModeFlag.ReadOnly)
-        json_str = f.readAll()
-        json_doc = QJsonDocument.fromJson(json_str)
-        if json_str.isEmpty() or not json_doc.isObject():
+        try:
+            with codecs.open(path, "r", encoding="utf-8") as f:
+                _data = f.read()
+            main_obj = json.loads(_data)
+        except:
             raise Sort.JsonFileCorruptedException(f'JSON file {path} is corrupted')
 
         # nacitani dat
         model = Sort()
         model._file_path = path
-        main_obj = json_doc.object()
         if main_obj['_type'] != 'Sort':
             raise Sort.JsonFileCorruptedException('JSON error: Expected Sort object')
         
@@ -528,7 +520,8 @@ class Sort(QObject):
                 student_json['class_id'],
                 tuple(student_json['required_subjects']),
                 model,
-                student_json['id']
+                student_json['id'],
+                is_locked=student_json['is_locked']
             )
 
             model.__students[student.id] = student
@@ -546,5 +539,6 @@ class Sort(QObject):
             if len(student_json['chosen_comb']) > 1:
                 selected_comb = tuple([comb if comb != 'None' else None for comb in student_json['chosen_comb']])
                 student.set_comb(student.possible_comb.index(selected_comb))
+            student.is_locked = student_json['is_locked']
 
         return model

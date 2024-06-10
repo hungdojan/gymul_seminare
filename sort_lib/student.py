@@ -1,4 +1,3 @@
-from tkinter import W
 import sort_lib.sort
 from PySide6.QtCore import QJsonArray
 
@@ -13,7 +12,8 @@ class Student:
         pass
 
     def __init__(self, first_name: str, last_name: str, class_id: str,
-                 required_subjects: tuple, parent: 'sort_lib.sort.Sort', id: str=None):
+                 required_subjects: tuple, parent: 'sort_lib.sort.Sort', id: str=None,
+                 is_locked: bool=False):
         if id is None:
             id = str(sort_lib.sort.Sort.student_id_counter)
             sort_lib.sort.Sort.student_id_counter += 1
@@ -36,7 +36,7 @@ class Student:
         # Vybrana kombinace studenta
         self.__chosen_comb: tuple = None
         # Zamek proti prepisu
-        self._is_locked = False
+        self._is_locked = is_locked
     
 
     @property
@@ -224,12 +224,7 @@ class Student:
                     subj[1].get_subject(subj[0]).remove_student(self)
     
     
-    def get_qjson(self) -> dict:
-        """Vygeneruje JSON objekt pro ulozeni backendu.
-
-        Returns:
-            dict: Vygenerovany JSON objekt.
-        """
+    def to_dict(self) -> dict:
         obj = {}
         obj['_type'] = "Student"
         obj['is_locked'] = self._is_locked
@@ -237,16 +232,9 @@ class Student:
         obj['first_name'] = self.__first_name
         obj['last_name'] = self.__last_name
         obj['class_id'] = self.__class_id
-        obj['required_subjects'] = QJsonArray()
-        list(map(lambda x: obj['required_subjects'].push_back(x), self.__required_subjects))
-        obj['possible_comb'] = QJsonArray()
-        for comb in self.possible_comb:
-            arr = QJsonArray()
-            list(map(lambda x: arr.push_back(str(x)), comb))
-            obj['possible_comb'].push_back(arr)
-        obj['chosen_comb'] = QJsonArray()
-        if self.__chosen_comb is not None:
-            list(map(lambda x: obj['chosen_comb'].push_back(str(x)), self.chosen_comb))
+        obj['required_subjects'] = list(self.__required_subjects)
+        obj['possible_comb'] = [[str(x) for x in comb] for comb in self.possible_comb]
+        obj['chosen_comb'] = [str(x) for x in self.chosen_comb] if self.__chosen_comb else []
         return obj
 
     

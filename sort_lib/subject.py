@@ -62,8 +62,8 @@ class Subject:
             self.__students[i].is_locked = False
             self.__students[i].required_subjects = self.__students[i].required_subjects
 
-    
-    def get_qjson(self) -> dict:
+
+    def to_dict(self) -> dict:
         """Vygeneruje JSON objekt pro ulozeni backendu.
 
         Returns:
@@ -72,12 +72,8 @@ class Subject:
         obj = {}
         obj['_type'] = 'Subject'
         obj['name'] = self.__name
-        obj['students'] = QJsonArray()
-        list(map(
-            lambda x: obj['students'].push_back(x),
-            list(map(lambda x: x.id, self.__students))))
+        obj['students'] = [x.id for x in self.__students]
         return obj
-
 
     def __repr__(self):
         return self.__name

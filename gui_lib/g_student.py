@@ -61,7 +61,6 @@ class GStudent(QWidget):
         self.lock_lbl.setFixedWidth(20)
         self.lock_lbl.setFont(font)
         self.lock_lbl.setText('\uf023')
-        self.lock_lbl.hide()
 
         self.id_lbl = QLabel(self.model.id, objectName='id')
         self.id_lbl.setFixedWidth(20)
@@ -83,6 +82,7 @@ class GStudent(QWidget):
         self.layout().addWidget(self.last_name_lbl, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.class_id_lbl, alignment=Qt.AlignmentFlag.AlignCenter)
         list(map(lambda x: self.layout().addWidget(x), self.subjects_cb))
+        self.lock_trigger()
 
 
     def mousePressEvent(self, a0: QMouseEvent) -> None:

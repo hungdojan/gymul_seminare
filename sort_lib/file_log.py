@@ -12,7 +12,7 @@ class FileLog:
         if cls.loggers.get(name) is not None:
             return
         
-        handler = logging.FileHandler(log_file)
+        handler = logging.FileHandler(log_file, encoding='cp1250')
         handler.setFormatter(cls.__formatter)
 
         logger = logging.getLogger(name)

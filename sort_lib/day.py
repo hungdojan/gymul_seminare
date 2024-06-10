@@ -91,17 +91,16 @@ class Day:
         self.__subjects.clear()
         self.__parent.set_sorted(False)
 
-    
-    def get_qjson(self) -> dict:
+
+    def to_dict(self) -> dict:
         """Vygeneruje JSON objekt pro ulozeni backendu.
 
         Returns:
             dict: Vygenerovany JSON objekt.
         """
         obj = {}
-        obj['subjects'] = QJsonArray()
         obj['_type'] = "Day"
-        list(map(lambda x: obj['subjects'].push_back(x.get_qjson()), self.__subjects))
+        obj['subjects'] = [x.to_dict() for x in self.__subjects]
         return obj
     
 
